@@ -14,32 +14,52 @@ export default function DestinationCard({
 }: DestinationCardProps) {
     return (
         <div className="group relative w-72 shrink-0 h-[420px] rounded-none bg-transparent overflow-visible transition-transform duration-300 hover:-translate-y-2">
-            {/* 
-        Image popping out from top, fading smoothly into the card body
-      */}
+
+            {/* Pop-out building illustration - fades at bottom/right to blend with background */}
             <div
-                className="absolute -top-16 left-0 right-0 h-72 z-20 pointer-events-none flex justify-center overflow-hidden"
+                className="absolute -top-16 left-0 w-48 h-48 z-30 pointer-events-none"
                 style={{
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
-                    maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)'
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to right, black 50%, transparent 100%)',
+                    maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to right, black 50%, transparent 100%)',
+                    WebkitMaskComposite: 'destination-in',
+                    maskComposite: 'intersect',
                 }}
             >
                 <img
-                    src="/img/building.png"
-                    alt="Building illustration"
-                    className="h-full w-full object-cover object-top drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                    src="/img/building-removebg-preview.png"
+                    alt="Building pop-out"
+                    className="w-full h-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1"
                 />
             </div>
 
-            {/* Main Card Content */}
-            <div className="relative h-full w-full bg-gradient-to-t from-blue-50/40 to-white pt-24 flex flex-col justify-between shadow-sm transition-shadow group-hover:shadow-md">
+            {/* Main Card Content - clipped for document icon fold on top-left */}
+            <div
+                className="relative h-full w-full bg-gradient-to-t from-blue-50/40 to-white flex flex-col justify-between shadow-sm transition-shadow group-hover:shadow-md"
+                style={{
+                    clipPath: 'polygon(110px 0, 100% 0, 100% 100%, 0 100%, 0 110px)',
+                }}
+            >
+
+                {/* Background image inside the card, fading smoothly — naturally clipped by card's clip-path */}
+                <div
+                    className="absolute -top-16 left-0 right-0 h-72 z-[1] pointer-events-none"
+                    style={{
+                        WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+                        maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+                    }}
+                >
+                    <img
+                        src="/img/building_background.png"
+                        alt="Building illustration"
+                        className="h-full w-full object-cover object-top drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                    />
+                </div>
 
                 {/* Custom borders for extended intersecting lines */}
-                {/* These are wrapped in a container that allows the bottom borders to safely overflow the card padding boundaries */}
                 <div className="absolute inset-0 z-10 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-px bg-blue-200" />
                     <div className="absolute top-0 bottom-0 left-0 w-px bg-blue-200" />
-                    {/* Right border extending down past the button */}
+                    {/* Right border extenbding down past the button */}
                     <div className="absolute top-0 -bottom-4 right-0 w-px bg-blue-300" />
                     {/* Bottom border extending right */}
                     <div className="absolute bottom-0 -right-4 left-0 h-px bg-blue-300" />
@@ -47,7 +67,7 @@ export default function DestinationCard({
                     <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-blue-500 z-20 translate-x-1/2 translate-y-1/2" />
                 </div>
 
-                <div className="px-6 flex-1 flex flex-col justify-between">
+                <div className="px-6 flex-1 flex flex-col justify-between pt-24 relative z-[2]">
                     {/* Top Content */}
                     <div>
                         <div className="relative z-30 inline-block px-2 py-1 bg-blue-50/90 backdrop-blur-sm border border-blue-200 text-blue-600 text-[10px] font-mono mb-4 tracking-wider uppercase shadow-sm">
