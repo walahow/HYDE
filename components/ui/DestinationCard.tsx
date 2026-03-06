@@ -13,7 +13,7 @@ export default function DestinationCard({
     documentCount,
 }: DestinationCardProps) {
     return (
-        <div className="group relative w-72 shrink-0 h-[420px] rounded-none bg-transparent overflow-visible transition-transform duration-300 hover:-translate-y-2">
+        <div className="group relative w-80 shrink-0 h-[360px] rounded-none bg-transparent overflow-visible transition-transform duration-300 hover:-translate-y-2">
 
             {/* Pop-out building illustration - fades at bottom/right to blend with background */}
             <div
