@@ -28,12 +28,72 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Pixelated glow dot pattern for HoverCard */
-.pixel-glow-mask {
-  -webkit-mask-image: radial-gradient(circle, black 40%, transparent 40%);
-  mask-image: radial-gradient(circle, black 40%, transparent 40%);
-  -webkit-mask-size: 6px 6px;
-  mask-size: 6px 6px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
+/* CSS Dithering Mask - Variable Scaling Effect */
+.mask-pixelated {
+  /* The base SVG pixel pattern */
+  --svg-dither: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h1v1H1zm2 2h1v1H3z' fill='black' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+
+  /* 
+   * Layer 1: Huge pixels near the core (100% 100%)
+   * Fades out quickly by 40% distance
+   */
+  --fade-large: radial-gradient(circle at 100% 100%, black 0%, transparent 40%);
+
+  /* 
+   * Layer 2: Medium pixels in the mid-range
+   * Fades out by 70% distance
+   */
+  --fade-med: radial-gradient(circle at 100% 100%, black 20%, transparent 70%);
+
+  /* 
+   * Layer 3: Small pixels that stretch the furthest
+   * Fades out completely by 100% distance
+   */
+  --fade-small: radial-gradient(circle at 100% 100%, black 50%, transparent 100%);
+
+  /* Apply all 3 SVG layers AND all 3 fade layers */
+  -webkit-mask-image:
+    var(--fade-large), var(--svg-dither),
+    var(--fade-med), var(--svg-dither),
+    var(--fade-small), var(--svg-dither);
+
+  mask-image:
+    var(--fade-large), var(--svg-dither),
+    var(--fade-med), var(--svg-dither),
+    var(--fade-small), var(--svg-dither);
+
+  /* The fades are 100% size, the SVG patterns are 16px, 10px, and 6px respectively */
+  -webkit-mask-size:
+    100% 100%, 10px 10px,
+    100% 100%, 10px 10px,
+    100% 100%, 10px 10px;
+
+  mask-size:
+    100% 100%, 10px 10px,
+    100% 100%, 10px 10px,
+    100% 100%, 10px 10px;
+
+  /* Repeat the dots, don't repeat the fades */
+  -webkit-mask-repeat:
+    no-repeat, repeat,
+    no-repeat, repeat,
+    no-repeat, repeat;
+
+  mask-repeat:
+    no-repeat, repeat,
+    no-repeat, repeat,
+    no-repeat, repeat;
+
+  /* Composite logic: 
+     Intersect each pair (Fade IN SVG), then add them together (Add) */
+  -webkit-mask-composite: source-in, source-over, source-in, source-over, source-in;
+  mask-composite: intersect, add, intersect, add, intersect;
+
+  image-rendering: pixelated;
+
+  /* Force Hardware Acceleration to prevent blur/pop-in on initial hover */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
