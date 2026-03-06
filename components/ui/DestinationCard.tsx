@@ -13,14 +13,14 @@ export default function DestinationCard({
     documentCount,
 }: DestinationCardProps) {
     return (
-        <div className="group relative w-80 shrink-0 h-[360px] rounded-none bg-transparent overflow-visible transition-transform duration-300 hover:-translate-y-2">
+        <div className="group relative w-96 shrink-0 h-[440px] rounded-none bg-transparent overflow-visible transition-transform duration-300 hover:-translate-y-2">
 
             {/* Pop-out building illustration - fades at bottom/right to blend with background */}
             <div
-                className="absolute -top-16 left-0 w-48 h-48 z-30 pointer-events-none"
+                className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-72 z-30 pointer-events-none"
                 style={{
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to right, black 50%, transparent 100%)',
-                    maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to right, black 50%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',
+                    maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',
                     WebkitMaskComposite: 'destination-in',
                     maskComposite: 'intersect',
                 }}
@@ -28,7 +28,13 @@ export default function DestinationCard({
                 <img
                     src="/img/building-removebg-preview.png"
                     alt="Building pop-out"
-                    className="w-full h-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1"
+                    className="w-full h-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-[1.1] group-hover:-translate-y-2 will-change-transform"
+                    style={{
+                        imageRendering: 'crisp-edges',
+                        WebkitFontSmoothing: 'antialiased',
+                        backfaceVisibility: 'hidden',
+                        transform: 'translateZ(0)'
+                    }}
                 />
             </div>
 
@@ -100,7 +106,7 @@ export default function DestinationCard({
                 </div>
 
                 {/* Full-width Bottom Button Area */}
-                <div className="w-full mt-auto relative z-0">
+                <div className="w-full mt-auto relative z-[2]">
                     <div className="text-center text-[10px] font-mono text-blue-600 mb-2 truncate px-6">
                         &gt;&gt;&gt; Ready for Processing &gt;&gt;&gt;
                     </div>

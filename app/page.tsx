@@ -110,7 +110,7 @@ export default function DashboardMahasiswaPage() {
           {/* This content ref holds the wide array of cards and physically scrolls left/right. Aligned to bottom to use more space. */}
           <div
             ref={contentRef}
-            className="flex flex-nowrap h-full items-end gap-6 px-[10vw] sm:px-24 xl:px-32 pr-[30vw] w-max pb-2"
+            className="flex flex-nowrap h-full items-center gap-6 px-[10vw] sm:px-24 xl:px-32 pr-[30vw] w-max pb-2"
           >
             {filtered.map((dest) => (
               <DestinationCard
