@@ -60,27 +60,28 @@ export default function DashboardMahasiswaPage() {
       {/* Search Header Container - Constrained Width */}
       <div className="mx-auto w-full max-w-5xl px-6 pt-6 pb-2 shrink-0">
         {/* Search bar Area */}
-        <div className="relative mb-6 pb-2 pr-2 inline-block w-full">
+        <div className="relative mb-6 inline-block w-full">
           {/* Custom borders for extended intersecting lines on the search bar */}
-          <div className="absolute top-0 left-0 right-2 h-px bg-blue-200" />
-          <div className="absolute top-0 bottom-2 left-0 w-px bg-blue-200" />
-          {/* Right border extending down */}
-          <div className="absolute top-0 bottom-0 right-2 w-px bg-blue-300" />
-          {/* Bottom border extending right */}
-          <div className="absolute bottom-2 right-0 left-0 h-px bg-blue-300" />
-          {/* Intersection point */}
-          <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-blue-500 z-20 translate-x-1/2 translate-y-1/2" />
+          {/* Top border: more overshoot left (top-left), less right (top-right) */}
+          <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
+          {/* Left border: more overshoot top (top-left), less bottom (bottom-left) */}
+          <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+
+          {/* Right border: less overshoot top (top-right), more bottom (bottom-right) */}
+          <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
+          {/* Bottom border: less overshoot left (bottom-left), more right (bottom-right) */}
+          <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
 
           <Search
             size={18}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-[calc(50%+4px)] text-blue-400 z-10"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-20"
           />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Mau kirim dokumen ke mana hari ini? (misal: Fakultas, Prodi, LPPM)"
-            className="w-full relative z-0 rounded-none bg-white py-3 pl-12 pr-4 text-base text-blue-950 shadow-sm placeholder:text-blue-400/70 focus:outline-none focus:bg-blue-50/50 transition-colors"
+            className="w-full relative z-0 rounded-none bg-white py-3 pl-12 pr-4 text-base text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:outline-none focus:bg-zinc-50 transition-colors"
           />
         </div>
 
@@ -110,15 +111,18 @@ export default function DashboardMahasiswaPage() {
           {/* This content ref holds the wide array of cards and physically scrolls left/right. Aligned to bottom to use more space. */}
           <div
             ref={contentRef}
-            className="flex flex-nowrap h-full items-center gap-6 px-[10vw] sm:px-24 xl:px-32 pr-[30vw] w-max pb-2"
+            className="flex flex-nowrap h-full items-center gap-16 px-[10vw] sm:px-24 xl:px-32 pr-[30vw] w-max pb-2"
           >
             {filtered.map((dest) => (
               <DestinationCard
                 key={dest.id}
                 id={dest.id}
+                categoryCode={dest.categoryCode}
                 name={dest.name}
                 faculty={dest.faculty}
                 documentCount={dest.documentCount}
+                status={dest.status}
+                acceptedDocuments={dest.acceptedDocuments}
               />
             ))}
           </div>

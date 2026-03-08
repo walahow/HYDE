@@ -2,10 +2,13 @@ export type DocumentStatus = "Baru" | "Diproses" | "Selesai";
 
 export interface Destination {
     id: string;
+    categoryCode: string;
     name: string;
     faculty: string;
     description: string;
     documentCount: number;
+    status: "open" | "closed";
+    acceptedDocuments: string[];
 }
 
 export interface StudentDocument {
