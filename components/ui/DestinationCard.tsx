@@ -87,9 +87,22 @@ export default function DestinationCard({
                     />
                 </div>
 
-                <div className="px-6 flex-1 flex flex-col pt-24 relative z-[2]">
-                    {/* Top Content */}
-                    <div>
+                {/* Retro-tech Bayer Dithering Overlay - Full Card Coverage */}
+                <div
+                    className="absolute inset-0 z-[10] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-multiply"
+                    style={{
+                        /* 4x4 Monochrome Bayer checkerboard pattern to remain lightweight via SVG Data URI */
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h2v2H0zM2 2h2v2H2z' fill='%2371717a' fill-opacity='0.18' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'repeat',
+                        /* Smooth fade-in below the top background image */
+                        maskImage: 'linear-gradient(to bottom, transparent 60px, black 160px)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 60px, black 160px)'
+                    }}
+                />
+
+                <div className="px-6 flex-1 flex flex-col pt-24 relative z-[20]">
+                    {/* Top Content - wrapped in relative z-10 for readable layers */}
+                    <div className="relative z-10">
                         <div className="relative z-30 inline-block text-zinc-500 text-[10px] font-mono mb-1 tracking-wider uppercase">
                             // {categoryCode}
                         </div>
@@ -121,7 +134,7 @@ export default function DestinationCard({
                     </div>
 
                     {/* Middle Content Area */}
-                    <div className="space-y-3 mt-4 flex-1">
+                    <div className="space-y-3 mt-4 flex-1 relative z-10">
                         <div className="h-px w-full bg-zinc-200" />
 
                         <div className="text-xs text-zinc-600 space-y-2 font-mono">
@@ -142,7 +155,7 @@ export default function DestinationCard({
                 </div>
 
                 {/* Full-width Bottom Button Area */}
-                <div className="w-full relative z-[2] bg-gradient-to-t from-zinc-50 to-transparent pt-4">
+                <div className="w-full relative z-[20] bg-gradient-to-t from-zinc-50 to-transparent pt-4">
                     <div className="text-center text-[11px] font-mono text-zinc-500 mb-2 truncate px-6 font-semibold tracking-widest">
                         &gt;&gt;&gt; Route Available &gt;&gt;&gt;
                     </div>
