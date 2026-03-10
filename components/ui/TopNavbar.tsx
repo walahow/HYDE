@@ -41,7 +41,7 @@ export default function TopNavbar({ user }: TopNavbarProps) {
 
     const centerLink = isOnRiwayat
         ? { href: dashboardHref, label: "Dashboard", Icon: LayoutDashboard }
-        : { href: riwayatHref, label: "DIR: history", Icon: null };
+        : { href: riwayatHref, label: "[ DIR: HISTORY ]", Icon: null };
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
@@ -75,16 +75,16 @@ export default function TopNavbar({ user }: TopNavbarProps) {
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setOpen((v) => !v)}
-                            className="group flex items-center gap-2 rounded-none bg-transparent px-4 py-2 text-base font-bold font-mono text-zinc-700 transition-colors hover:bg-black hover:text-white"
+                            className="group flex items-center gap-2 rounded-none bg-transparent px-4 py-2 text-base font-bold font-mono text-zinc-700 transition-colors"
                             aria-expanded={open}
                             aria-haspopup="true"
                         >
                             <span>
-                                [ ID: {user.name.split(" ")[0]} ]
+                                ID: {user.name.split(" ")[0]}
                             </span>
                             <ChevronDown
                                 size={14}
-                                className={`text-zinc-400 transition-transform duration-200 group-hover:text-white ${open ? "rotate-180" : ""}`}
+                                className={`text-zinc-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
                             />
                         </button>
 
