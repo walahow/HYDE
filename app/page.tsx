@@ -7,7 +7,7 @@ import DestinationCard from "@/components/ui/DestinationCard";
 import { destinations } from "@/lib/dummy-data";
 import type { UserProfile } from "@/lib/types";
 import Lenis from "lenis";
-import { InteractiveGridPattern } from "@/components/magicui/interactive-grid-pattern";
+import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import { cn } from "@/lib/utils";
 
 const currentUser: UserProfile = {
@@ -72,16 +72,8 @@ export default function DashboardMahasiswaPage() {
   return (
     <div className="relative h-screen w-full flex flex-col overflow-hidden bg-white">
       {/* Background Interactive Grid */}
-      <div className="absolute inset-0 z-0">
-        <InteractiveGridPattern
-          className={cn(
-            "[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]"
-          )}
-          width={40}
-          height={40}
-          squaresClassName="hover:fill-black/10"
-        />
-      </div>
+      <InteractiveBackground />
+
 
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col">
         <div className="pointer-events-auto shrink-0">
@@ -89,7 +81,7 @@ export default function DashboardMahasiswaPage() {
         </div>
 
         {/* Search Header Container - Constrained Width */}
-        <div className="pointer-events-auto mx-auto w-full max-w-5xl px-6 pt-6 pb-2 shrink-0">
+        <div className="pointer-events-auto mx-auto w-full max-w-5xl px-6 pt-10 pb-2 shrink-0">
           {/* Search bar Area */}
           <div className="relative mb-6 inline-block w-full">
             {/* Custom borders for extended intersecting lines on the search bar */}
@@ -116,17 +108,17 @@ export default function DashboardMahasiswaPage() {
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-base flex items-center"
                 aria-hidden="true"
               >
-                [ ⌘K ] | &gt; SEARCH DESTINATION...
+                [ ⌘K ] | &gt; SEARCH DESTINATION
                 <span className="animate-terminal-blink ml-1">_</span>
               </div>
             )}
           </div>
 
           {/* Divider */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-6">
             <div className="h-px flex-1 bg-zinc-200" />
-            <span className="text-xs font-medium text-zinc-400">
-              {filtered.length} tujuan tersedia
+            <span className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
+              {filtered.length} TUJUAN TERSEDIA
             </span>
             <div className="h-px flex-1 bg-zinc-200" />
           </div>

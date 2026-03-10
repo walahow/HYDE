@@ -8,6 +8,7 @@ interface InteractiveGridPatternProps extends React.SVGProps<SVGSVGElement> {
     height?: number;
     className?: string;
     squaresClassName?: string;
+    interactiveSource?: 'self' | 'window';
 }
 
 interface TrailItem {
@@ -26,17 +27,18 @@ export function InteractiveGridPattern({
     height = 40,
     className,
     squaresClassName,
+    interactiveSource = 'self',
     ...props
 }: InteractiveGridPatternProps) {
     const [trail, setTrail] = useState<TrailItem[]>([]);
     const containerRef = useRef<SVGSVGElement>(null);
     const lastPos = useRef<{ x: number; y: number } | null>(null);
 
-    const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    const handleMouseMove = useCallback((clientX: number, clientY: number) => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
 
         // Snap to grid
         const gridX = Math.floor(x / width) * width;
@@ -55,7 +57,18 @@ export function InteractiveGridPattern({
         setTimeout(() => {
             setTrail((prev) => prev.filter((item) => item.id !== id));
         }, 1500);
-    };
+    }, [width, height]);
+
+    React.useEffect(() => {
+        if (interactiveSource !== 'window') return;
+
+        const onWindowMouseMove = (e: MouseEvent) => {
+            handleMouseMove(e.clientX, e.clientY);
+        };
+
+        window.addEventListener('mousemove', onWindowMouseMove);
+        return () => window.removeEventListener('mousemove', onWindowMouseMove);
+    }, [interactiveSource, handleMouseMove]);
 
     return (
         <svg
@@ -66,7 +79,7 @@ export function InteractiveGridPattern({
                 "absolute inset-0 h-full w-full",
                 className,
             )}
-            onMouseMove={handleMouseMove}
+            onMouseMove={interactiveSource === 'self' ? (e) => handleMouseMove(e.clientX, e.clientY) : undefined}
             {...props}
         >
             <defs>
@@ -81,7 +94,7 @@ export function InteractiveGridPattern({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="1"
-                        className="text-black/5"
+                        className="text-black/10"
                     />
                 </pattern>
             </defs>
@@ -98,7 +111,7 @@ export function InteractiveGridPattern({
                     width={width}
                     height={height}
                     className={cn(
-                        "fill-black/10 origin-center pointer-events-none",
+                        "fill-black/15 origin-center pointer-events-none",
                         squaresClassName
                     )}
                     style={{

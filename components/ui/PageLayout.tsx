@@ -6,8 +6,8 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children }: PageLayoutProps) {
     return (
-        <div className="min-h-screen bg-[#f5f5f7]">
-            <div className="mx-auto max-w-5xl px-6 py-10">{children}</div>
+        <div className="min-h-screen bg-transparent pointer-events-none">
+            <div className="mx-auto max-w-5xl px-6 py-10 pointer-events-auto">{children}</div>
         </div>
     );
 }
