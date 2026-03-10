@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Clock, Building2, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Power, Building2, LayoutDashboard } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 
 interface TopNavbarProps {
@@ -41,7 +41,7 @@ export default function TopNavbar({ user }: TopNavbarProps) {
 
     const centerLink = isOnRiwayat
         ? { href: dashboardHref, label: "Dashboard", Icon: LayoutDashboard }
-        : { href: riwayatHref, label: "Riwayat", Icon: Clock };
+        : { href: riwayatHref, label: "DIR: history", Icon: null };
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
@@ -49,9 +49,12 @@ export default function TopNavbar({ user }: TopNavbarProps) {
 
                 {/* Left: Logo */}
                 <div className="flex items-center">
-                    <Link href={dashboardHref} className="flex items-center">
+                    <Link href={dashboardHref} className="flex items-baseline gap-1 group">
                         <span className="text-xl font-extrabold tracking-tight text-zinc-900">
                             HYDE
+                        </span>
+                        <span className="text-[10px] font-mono font-light text-zinc-400 tracking-tight">
+                            SYS.v1.0
                         </span>
                     </Link>
                 </div>
@@ -60,9 +63,9 @@ export default function TopNavbar({ user }: TopNavbarProps) {
                 <div className="flex items-center justify-center">
                     <Link
                         href={centerLink.href}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                        className="flex items-center gap-1.5 rounded-none px-4 py-2 text-base font-light font-mono text-zinc-500 transition-colors hover:bg-black hover:text-white"
                     >
-                        <centerLink.Icon size={14} className="text-zinc-400" />
+                        {centerLink.Icon && <centerLink.Icon size={14} className="text-zinc-400 group-hover:text-white transition-colors" />}
                         {centerLink.label}
                     </Link>
                 </div>
@@ -72,31 +75,28 @@ export default function TopNavbar({ user }: TopNavbarProps) {
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setOpen((v) => !v)}
-                            className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
+                            className="group flex items-center gap-2 rounded-none bg-transparent px-4 py-2 text-base font-bold font-mono text-zinc-700 transition-colors hover:bg-black hover:text-white"
                             aria-expanded={open}
                             aria-haspopup="true"
                         >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-[11px] font-bold text-white select-none">
-                                {initials}
-                            </span>
-                            <span className="hidden max-w-[120px] truncate text-sm font-medium text-zinc-800 sm:block">
-                                {user.name.split(" ")[0]}
+                            <span>
+                                [ ID: {user.name.split(" ")[0]} ]
                             </span>
                             <ChevronDown
                                 size={14}
-                                className={`text-zinc-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                                className={`text-zinc-400 transition-transform duration-200 group-hover:text-white ${open ? "rotate-180" : ""}`}
                             />
                         </button>
 
                         {/* Dropdown panel */}
                         {open && (
-                            <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border border-zinc-200 bg-white p-1 shadow-xl ring-1 ring-black/5">
+                            <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-none border border-zinc-200 bg-white p-1 shadow-xl ring-1 ring-black/5">
                                 {/* User info header */}
                                 <div className="px-3 py-3">
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-bold text-white">
-                                            {initials}
-                                        </span>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="font-mono font-light text-[10px] text-zinc-400">
+                                            SECURE_SESSION_ACTIVE
+                                        </div>
                                         <div className="min-w-0">
                                             <p className="truncate text-sm font-semibold text-zinc-900">
                                                 {user.name}
@@ -120,9 +120,9 @@ export default function TopNavbar({ user }: TopNavbarProps) {
                                 <Link
                                     href={centerLink.href}
                                     onClick={() => setOpen(false)}
-                                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
+                                    className="flex items-center gap-2.5 rounded-none px-3 py-2 text-sm font-mono text-zinc-700 transition-colors hover:bg-black hover:text-white"
                                 >
-                                    <centerLink.Icon size={15} className="text-zinc-400" />
+                                    {centerLink.Icon && <centerLink.Icon size={15} className="text-zinc-400 group-hover:text-white transition-colors" />}
                                     {centerLink.label}
                                 </Link>
 
@@ -131,10 +131,11 @@ export default function TopNavbar({ user }: TopNavbarProps) {
                                 {/* Logout */}
                                 <button
                                     onClick={() => setOpen(false)}
-                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+                                    className="flex w-full items-center justify-center gap-2 rounded-none px-3 py-2 text-sm font-mono font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white"
                                 >
-                                    <LogOut size={15} />
-                                    Keluar
+                                    <span>[</span>
+                                    <Power size={14} strokeWidth={3} />
+                                    <span>LOG OUT ]</span>
                                 </button>
                             </div>
                         )}
