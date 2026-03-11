@@ -1,131 +1,165 @@
 "use client";
 
-import { useState } from "react";
-import { Search, FileText, Eye } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { FileText, ExternalLink } from "lucide-react";
+import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
-import PageLayout from "@/components/ui/PageLayout";
 import HoverCard from "@/components/ui/HoverCard";
-import StatusBadge from "@/components/ui/StatusBadge";
+import AdminStatusBadge, { AdminStatusType } from "@/components/ui/AdminStatusBadge";
 import { adminHistoryDocuments } from "@/lib/dummy-data";
 import type { UserProfile } from "@/lib/types";
 
-const adminUser: UserProfile = {
-    name: "Admin Prodi",
-    nim: "ADM-IK-001",
+const currentUser: UserProfile = {
+    name: "Admin Terminal",
+    nim: "SYS-ADMIN-01",
     role: "admin",
-    institution: "Prodi Ilmu Komputer — Fakultas MIPA",
+    institution: "HYDE_CENTRAL_REGISTRY",
 };
 
-export default function AdminRiwayatPage() {
+export default function AdminHistoryPage() {
     const [query, setQuery] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
     const filtered = adminHistoryDocuments.filter(
         (doc) =>
             doc.studentName.toLowerCase().includes(query.toLowerCase()) ||
             doc.nim.toLowerCase().includes(query.toLowerCase()) ||
-            doc.trackingId.toLowerCase().includes(query.toLowerCase()) ||
-            doc.documentType.toLowerCase().includes(query.toLowerCase())
+            doc.documentType.toLowerCase().includes(query.toLowerCase()) ||
+            doc.trackingId.toLowerCase().includes(query.toLowerCase())
     );
 
-    const selesaiCount = adminHistoryDocuments.filter((d) => d.status === "Selesai").length;
-    const diprosesCount = adminHistoryDocuments.filter((d) => d.status === "Diproses").length;
+    // Map DocumentStatus to specialized History AdminStatusTypes
+    const mapStatus = (status: string, studentName: string): AdminStatusType => {
+        if (status === "Selesai") return "COMPLETED";
+        if (status === "Diproses") return "APPROVED"; // Or however we want to map history
+        return "IN_REVISION";
+    };
 
     return (
-        <>
-            <TopNavbar user={adminUser} />
-            <PageLayout>
-                {/* Header */}
-                <div className="mb-8 pt-4">
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                        Riwayat Dokumen Diproses
-                    </h1>
-                </div>
+        <div className="relative h-screen w-screen flex flex-col bg-white overflow-hidden">
+            <InteractiveBackground />
 
-                {/* Stats row */}
-                <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                        <p className="text-2xl font-bold text-zinc-900">
-                            {adminHistoryDocuments.length}
-                        </p>
-                        <p className="mt-0.5 text-xs text-zinc-500">Total Arsip</p>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                        <p className="text-2xl font-bold text-zinc-900">{selesaiCount}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500">Selesai</p>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                        <p className="text-2xl font-bold text-zinc-900">{diprosesCount}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500">Sedang Diproses</p>
-                    </div>
-                </div>
+            {/* Main Layout Container */}
+            <div className="relative z-10 flex flex-col h-full w-full">
 
-                {/* Search bar */}
-                <div className="relative mb-8">
-                    <Search
-                        size={18}
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                    />
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Cari arsip dokumen..."
-                        className="w-full rounded-2xl border border-zinc-200 bg-white py-3.5 pl-11 pr-4 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200 transition-all"
-                    />
-                </div>
+                {/* Fixed Top Section: Navbar + Search Area */}
+                <div className="shrink-0">
+                    <TopNavbar user={currentUser} />
+                    <div className="mx-auto max-w-5xl px-6 pt-10 pb-4">
+                        {/* Header Title */}
+                        <div className="mb-6">
+                            <h1 className="text-xl font-mono font-bold text-zinc-900 tracking-tighter">
+                                {"> ARCHIVE_LOGS // PROCESSED_DATA"}
+                            </h1>
+                        </div>
 
-                {/* Divider */}
-                <div className="mb-6 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-zinc-200" />
-                    <span className="text-xs font-medium text-zinc-400">
-                        {filtered.length} arsip ditampilkan
-                    </span>
-                    <div className="h-px flex-1 bg-zinc-200" />
-                </div>
+                        {/* Search bar */}
+                        <div className="relative inline-block w-full">
+                            {/* Custom borders for extended intersecting lines on the search bar */}
+                            <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
+                            <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+                            <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
+                            <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
 
-                {/* History cards */}
-                {filtered.length === 0 ? (
-                    <div className="py-16 text-center">
-                        <FileText size={40} className="mx-auto mb-3 text-zinc-300" />
-                        <p className="text-sm text-zinc-500">Tidak ada arsip yang cocok.</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-3">
-                        {filtered.map((doc) => (
-                            <HoverCard key={doc.id}>
-                                <div className="flex items-center justify-between px-5 py-4">
-                                    {/* Left: icon + info */}
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                                            <FileText size={18} className="text-zinc-500" />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-sm font-semibold text-zinc-900">
-                                                    {doc.studentName}
-                                                </p>
-                                                <StatusBadge status={doc.status} />
-                                            </div>
-                                            <p className="mt-0.5 text-xs text-zinc-500">
-                                                {doc.documentType}
-                                            </p>
-                                            <p className="mt-0.5 text-xs text-zinc-400">
-                                                {doc.nim} &middot; {doc.trackingId} &middot; {doc.submittedAt}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: detail button */}
-                                    <button className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-700 shadow-sm transition-all hover:border-zinc-300 hover:shadow-md">
-                                        <Eye size={13} />
-                                        Lihat Detail
-                                    </button>
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light"
+                            />
+                            {!query && (
+                                <div
+                                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-base flex items-center"
+                                    aria-hidden="true"
+                                >
+                                    [ ⌘K ] | &gt; SEARCH ARCHIVED DOCUMENT
+                                    <span className="animate-terminal-blink ml-1">_</span>
                                 </div>
-                            </HoverCard>
-                        ))}
+                            )}
+                        </div>
+
+                        {/* Divider */}
+                        <div className="mt-6 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-zinc-200" />
+                            <span className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
+                                {filtered.length} ARCHIVE_RECORDS_FOUND
+                            </span>
+                            <div className="h-px flex-1 bg-zinc-200" />
+                        </div>
                     </div>
-                )}
-            </PageLayout>
-        </>
+                </div>
+
+                {/* Scrollable Document List Area with Fade Masks */}
+                <div
+                    className="flex-1 overflow-y-auto px-6"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)'
+                    }}
+                >
+                    <div className="mx-auto max-w-5xl py-8 min-h-full flex flex-col justify-center">
+                        {filtered.length === 0 ? (
+                            <div className="text-center py-12">
+                                <FileText size={40} className="mx-auto mb-3 text-zinc-300" />
+                                <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest">No archived records found</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-3 pb-16">
+                                {filtered.map((doc) => (
+                                    <HoverCard key={doc.id}>
+                                        <div className="flex items-center justify-between px-5 py-4">
+                                            {/* Left: icon + info */}
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-zinc-50 border border-zinc-100 shadow-sm">
+                                                    <FileText size={18} className="text-zinc-500" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="text-sm font-bold font-mono text-zinc-900 truncate">
+                                                            {doc.studentName}
+                                                        </p>
+                                                        <AdminStatusBadge
+                                                            status={mapStatus(doc.status, doc.studentName)}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-tight">
+                                                            NIM: {doc.nim} // TYPE: {doc.documentType.toUpperCase()} (DIGITAL)
+                                                        </p>
+                                                        <p className="text-[10px] font-mono text-zinc-400 tracking-tight">
+                                                            ID: {doc.trackingId} // PROCESSED: {doc.submittedAt}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Right: action button */}
+                                            <button className="flex items-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm group">
+                                                <span>[</span>
+                                                <span>VIEW_RECORD</span>
+                                                <ExternalLink size={12} className="ml-0.5" />
+                                                <span>]</span>
+                                            </button>
+                                        </div>
+                                    </HoverCard>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

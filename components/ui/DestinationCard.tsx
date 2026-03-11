@@ -111,7 +111,7 @@ export default function DestinationCard({
                         </h3>
                         {/* Action + Status Row */}
                         <div className="flex items-center justify-between mb-4 mt-2">
-                            <button className="flex items-center gap-2 rounded-none bg-transparent text-zinc-500 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm w-max">
+                            <button className="flex items-center gap-2 rounded-none bg-white text-zinc-500 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm w-max">
                                 <MapPin size={12} className="shrink-0" />
                                 Check Location
                             </button>
