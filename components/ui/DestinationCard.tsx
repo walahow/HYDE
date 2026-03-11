@@ -1,4 +1,5 @@
 import { ChevronRight, MapPin, Circle, Ban } from "lucide-react";
+import Link from "next/link";
 
 interface DestinationCardProps {
     id: string;
@@ -176,9 +177,9 @@ export default function DestinationCard({
                         </div>
                     </div>
 
-                    <button className="w-full py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-50 flex justify-center items-center uppercase tracking-wide">
+                    <Link href="/student/document-view" className="w-full py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-50 flex justify-center items-center uppercase tracking-wide">
                         Pack Documents
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
