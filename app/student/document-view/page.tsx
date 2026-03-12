@@ -120,25 +120,43 @@ export default function StudentDocumentView() {
         </div>
 
         <div className="w-[40%] flex flex-col bg-white overflow-hidden">
+          {/* A. STATUS CARD (SLIMMER) */}
           <div className="p-8 border-b border-zinc-100">
-            <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TASK_EXECUTION_STATE</h2>
-            <div className="inline-block bg-white p-5 relative overflow-visible">
-              {/* Full overshooting borders defining the card shape */}
-              <div className="absolute top-0 -left-4 -right-4 h-px bg-zinc-300 pointer-events-none" />
-              <div className="absolute left-0 -top-4 -bottom-4 w-px bg-zinc-300 pointer-events-none" />
-              <div className="absolute right-0 -top-4 -bottom-4 w-px bg-zinc-200 pointer-events-none" />
-              <div className="absolute bottom-0 -left-4 -right-4 h-px bg-zinc-200 pointer-events-none" />
+            <div className="relative overflow-visible">
+              {/* Corner Markers for Status Block */}
+              <div className="absolute -top-0 -left-6 -right-6 h-px bg-zinc-100 pointer-events-none" />
+              <div className="absolute bottom-0 -left-6 -right-6 h-px bg-zinc-100 pointer-events-none" />
 
-              <div className="flex items-center gap-4">
-                <div className="relative flex items-center justify-center">
-                  <div className={`w-3 h-3 rounded-none ${docStatus === "Approved" ? "bg-emerald-500" : docStatus === "Sending" ? "bg-blue-500" : "bg-zinc-900"} animate-status-pulse`} />
-                  <div className={`absolute w-3 h-3 rounded-none ${docStatus === "Approved" ? "bg-emerald-500/30" : docStatus === "Sending" ? "bg-blue-500/30" : "bg-zinc-900/30"} animate-ping opacity-20`} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-mono font-bold text-xs tracking-tight text-zinc-400 uppercase mb-0.5">Global Status Indicator</span>
-                  <span className="font-mono font-bold text-base tracking-tighter text-zinc-900">
-                    [ {docStatus === "Approved" ? "VERIFIED_SUCCESS" : docStatus === "Sending" ? "DATA_STREAM_ACTIVE" : "AWAITING_INPUT_REVISION"} ]
+              <div className="flex flex-col w-full py-1">
+                <span className="font-mono font-bold text-[8px] tracking-[0.3em] text-zinc-400 uppercase mb-2">SEQUENCE_PHASE</span>
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+                  <span className={`px-2 py-0.5 transition-all ${docStatus === "Sending" ? "bg-zinc-900 text-white" : "text-zinc-900/60"}`}>
+                    SENDING
                   </span>
+                  <span className="text-zinc-200">→</span>
+                  <span className={`px-2 py-0.5 transition-all ${docStatus === "Needs Revision" ? "bg-zinc-900 text-white" : "text-zinc-900/60"}`}>
+                    REVISION
+                  </span>
+                  <span className="text-zinc-300">→</span>
+                  <span className={`px-2 py-0.5 transition-all ${docStatus === "Approved" ? "bg-zinc-900 text-white" : "text-zinc-900/60"}`}>
+                    APPROVED
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* B. SENDER/DESTINATION IDENTIFICATION */}
+          <div className="p-8 border-b border-zinc-100 space-y-8">
+            {/* DESTINATION BLOCK */}
+            <div>
+              <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4">// TRANSMISSION_DESTINATION</h2>
+              <div className="p-4 relative overflow-visible">
+                <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
+                <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
+                <div className="space-y-1 font-mono text-[10px]">
+                  <p className="text-zinc-900 font-bold">&gt; OFFICE: <span className="text-zinc-500">TU_ENGINEERING_01</span></p>
+                  <p className="text-zinc-900 font-bold">&gt; AUTH: <span className="text-emerald-600/70">AUTHORIZED_DESTINATION</span></p>
                 </div>
               </div>
             </div>

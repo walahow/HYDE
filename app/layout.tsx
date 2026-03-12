@@ -22,7 +22,7 @@ export default function RootLayout({
       <head>
         <link rel="preload" href="/img/dither_shadow.png" as="image" />
       </head>
-      <body className={`${geistSans.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} antialiased`} suppressHydrationWarning={true}>{children}</body>
     </html>
   );
 }
