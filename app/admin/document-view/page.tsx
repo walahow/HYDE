@@ -83,10 +83,8 @@ export default function AdminDocumentView() {
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK</span>
               </Link>
               <span className="text-zinc-300 hidden md:inline ml-1">|</span>
-              <span className="text-zinc-400 truncate hidden md:inline">[ <span className="text-yellow-500/80">📂</span> REPOSITORY: /incoming ] &gt;</span>
-              <span className="text-zinc-300 hidden md:inline">|</span>
               <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
-                <span className="font-bold truncate">ENTITY_ID: {selectedFile}</span>
+                <span className="font-bold truncate">📂 FILE_ID: {selectedFile}</span>
                 <ChevronDown size={12} className="text-zinc-400 shrink-0" />
               </button>
             </div>
