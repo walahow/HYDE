@@ -56,10 +56,10 @@ export default function AdminHistoryPage() {
                 {/* Fixed Top Section: Navbar + Search Area */}
                 <div className="shrink-0">
                     <TopNavbar user={currentUser} />
-                    <div className="mx-auto max-w-5xl px-6 pt-10 pb-4">
+                    <div className="mx-auto max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-4">
                         {/* Header Title */}
                         <div className="mb-6">
-                            <h1 className="text-xl font-mono font-bold text-zinc-900 tracking-tighter">
+                            <h1 className="text-lg md:text-xl font-mono font-bold text-zinc-900 tracking-tighter">
                                 {"> ARCHIVE_LOGS // PROCESSED_DATA"}
                             </h1>
                         </div>
@@ -67,24 +67,24 @@ export default function AdminHistoryPage() {
                         {/* Search bar */}
                         <div className="relative inline-block w-full">
                             {/* Custom borders for extended intersecting lines on the search bar */}
-                            <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
-                            <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
-                            <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
-                            <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
+                            <div className="absolute top-0 -left-2 -right-2 h-px bg-zinc-300 z-10" />
+                            <div className="absolute -top-2 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+                            <div className="absolute -top-2 -bottom-2 right-0 w-px bg-zinc-300 z-10" />
+                            <div className="absolute bottom-0 -left-2 -right-2 h-px bg-zinc-300 z-10" />
 
                             <input
                                 ref={searchInputRef}
                                 type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light"
+                                className="w-full relative z-0 rounded-none bg-white py-4 md:py-3 pl-4 pr-4 text-sm md:text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light h-14 md:h-auto"
                             />
                             {!query && (
                                 <div
-                                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-base flex items-center"
+                                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-[11px] md:text-base flex items-center"
                                     aria-hidden="true"
                                 >
-                                    [ ⌘K ] | &gt; SEARCH ARCHIVED DOCUMENT
+                                    <span className="hidden md:inline">[ ⌘K ] | </span>&gt; SEARCH ARCHIVED DOCUMENT
                                     <span className="animate-terminal-blink ml-1">_</span>
                                 </div>
                             )}
@@ -93,7 +93,7 @@ export default function AdminHistoryPage() {
                         {/* Divider */}
                         <div className="mt-6 flex items-center gap-3">
                             <div className="h-px flex-1 bg-zinc-200" />
-                            <span className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
+                            <span className="text-[9px] md:text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
                                 {filtered.length} ARCHIVE_RECORDS_FOUND
                             </span>
                             <div className="h-px flex-1 bg-zinc-200" />
@@ -103,15 +103,15 @@ export default function AdminHistoryPage() {
 
                 {/* Scrollable Document List Area with Fade Masks */}
                 <div
-                    className="flex-1 overflow-y-auto px-6"
+                    className="flex-1 overflow-y-auto px-4 md:px-6"
                     style={{
                         maskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)'
                     }}
                 >
-                    <div className="mx-auto max-w-5xl py-8 min-h-full flex flex-col justify-center">
+                    <div className="mx-auto max-w-5xl py-8 min-h-full flex flex-col">
                         {filtered.length === 0 ? (
-                            <div className="text-center py-12">
+                            <div className="text-center py-12 flex-1 flex flex-col justify-center">
                                 <FileText size={40} className="mx-auto mb-3 text-zinc-300" />
                                 <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest">No archived records found</p>
                             </div>
@@ -119,14 +119,14 @@ export default function AdminHistoryPage() {
                             <div className="grid gap-3 pb-16">
                                 {filtered.map((doc) => (
                                     <HoverCard key={doc.id}>
-                                        <div className="flex items-center justify-between px-5 py-4">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:px-5 md:py-4 gap-4 md:gap-0">
                                             {/* Left: icon + info */}
                                             <div className="flex items-center gap-4">
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-zinc-50 border border-zinc-100 shadow-sm">
                                                     <FileText size={18} className="text-zinc-500" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
                                                         <p className="text-sm font-bold font-mono text-zinc-900 truncate">
                                                             {doc.studentName}
                                                         </p>
@@ -135,10 +135,10 @@ export default function AdminHistoryPage() {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-0.5">
-                                                        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-tight">
-                                                            NIM: {doc.nim} // TYPE: {doc.documentType.toUpperCase()} (DIGITAL)
+                                                        <p className="text-[10px] md:text-[11px] font-mono text-zinc-500 uppercase tracking-tight line-clamp-1">
+                                                            NIM: {doc.nim} // TYPE: {doc.documentType.toUpperCase()}
                                                         </p>
-                                                        <p className="text-[10px] font-mono text-zinc-400 tracking-tight">
+                                                        <p className="text-[9px] md:text-[10px] font-mono text-zinc-400 tracking-tight">
                                                             ID: {doc.trackingId} // PROCESSED: {doc.submittedAt}
                                                         </p>
                                                     </div>
@@ -146,7 +146,10 @@ export default function AdminHistoryPage() {
                                             </div>
 
                                             {/* Right: action button */}
-                                            <button className="flex items-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm group">
+                                            <button 
+                                                onClick={() => window.location.href = "/admin/document-view"}
+                                                className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 w-full md:w-auto px-4 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black active:bg-zinc-100 md:active:bg-black transition-all shadow-sm group h-12 md:h-auto"
+                                            >
                                                 <span>[</span>
                                                 <span>VIEW_RECORD</span>
                                                 <ExternalLink size={12} className="ml-0.5" />

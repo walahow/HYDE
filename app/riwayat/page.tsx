@@ -43,12 +43,12 @@ export default function RiwayatMahasiswaPage() {
             <InteractiveBackground />
             
             {/* Main Layout Container */}
-            <div className="relative z-10 flex flex-col h-full w-full">
+            <div className="relative z-10 flex flex-col h-screen w-full">
                 
                 {/* Fixed Top Section: Navbar + Search Area */}
                 <div className="shrink-0">
                     <TopNavbar user={currentUser} />
-                    <div className="mx-auto max-w-5xl px-6 pt-10 pb-4">
+                    <div className="mx-auto max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-4">
                         {/* Search bar */}
                         <div className="relative inline-block w-full">
                             {/* Custom borders for extended intersecting lines on the search bar */}
@@ -62,11 +62,11 @@ export default function RiwayatMahasiswaPage() {
                                 type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light"
+                                className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 h-12 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light border border-zinc-100 md:border-none"
                             />
                             {!query && (
                                 <div
-                                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-base flex items-center"
+                                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-sm md:text-base flex items-center"
                                     aria-hidden="true"
                                 >
                                     [ ⌘K ] | &gt; SEARCH HISTORY
@@ -78,7 +78,7 @@ export default function RiwayatMahasiswaPage() {
                         {/* Divider */}
                         <div className="mt-6 flex items-center gap-3">
                             <div className="h-px flex-1 bg-zinc-200" />
-                            <span className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
+                            <span className="text-[10px] md:text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest px-2">
                                 {filtered.length} DOKUMEN DITEMUKAN
                             </span>
                             <div className="h-px flex-1 bg-zinc-200" />
@@ -88,30 +88,30 @@ export default function RiwayatMahasiswaPage() {
 
                 {/* Scrollable Document List Area with Fade Masks */}
                 <div 
-                    className="flex-1 overflow-y-auto px-6"
+                    className="flex-1 overflow-y-auto px-4 md:px-6"
                     style={{
                         maskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)'
                     }}
                 >
-                    <div className="mx-auto max-w-5xl py-8 min-h-full flex flex-col justify-center">
+                    <div className="mx-auto max-w-5xl py-8 min-h-full flex flex-col justify-start md:justify-center">
                         {filtered.length === 0 ? (
                             <div className="text-center py-12">
                                 <FileText size={40} className="mx-auto mb-3 text-zinc-300" />
                                 <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest">Tidak ada dokumen yang ditemukan</p>
                             </div>
                         ) : (
-                            <div className="grid gap-3 pb-16">
+                            <div className="grid gap-4 md:gap-3 pb-16">
                                 {filtered.map((doc) => (
                                     <HoverCard key={doc.id}>
-                                        <div className="flex items-center justify-between px-5 py-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-5 py-4 gap-4">
                                             {/* Left: icon + info */}
                                             <div className="flex items-center gap-4">
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-zinc-50 border border-zinc-100 shadow-sm">
                                                     <FileText size={18} className="text-zinc-500" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
                                                         <p className="text-sm font-bold font-mono text-zinc-900 truncate">
                                                             {doc.destinationName}
                                                         </p>
@@ -129,7 +129,7 @@ export default function RiwayatMahasiswaPage() {
                                             </div>
 
                                             {/* Right: detail button */}
-                                            <button className="flex items-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm">
+                                            <button className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:bg-black active:text-white sm:w-auto w-full h-11 sm:h-auto">
                                                 DETAIL
                                                 <ExternalLink size={12} />
                                             </button>

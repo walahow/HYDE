@@ -20,11 +20,11 @@ export default function DestinationCard({
     acceptedDocuments,
 }: DestinationCardProps) {
     return (
-        <div className="group relative w-96 shrink-0 h-[460px] rounded-none bg-transparent overflow-visible transition-transform duration-300">
+        <div className="group relative w-full max-w-[384px] md:w-96 shrink-0 h-[480px] md:h-[460px] rounded-none bg-transparent overflow-visible transition-transform duration-300 mx-auto">
 
-            {/* Pop-out building illustration - fades at bottom/right to blend with background */}
+            {/* Pop-out building illustration */}
             <div
-                className="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-72 z-30 pointer-events-none"
+                className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 sm:w-72 sm:h-72 z-30 pointer-events-none"
                 style={{
                     WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',
@@ -32,7 +32,6 @@ export default function DestinationCard({
                     maskComposite: 'intersect',
                 }}
             >
-                {/* Ensure the image is a grayscale or fits the monochrome theme. Grayscale filter applied. */}
                 <img
                     src="/img/building-removebg-preview.png"
                     alt="Building pop-out"
@@ -46,26 +45,26 @@ export default function DestinationCard({
                 />
             </div>
 
-            {/* Custom borders for extended intersecting lines in monochrome theme - PLACED OUTSIDE CLIP */}
+            {/* Custom borders for extended intersecting lines */}
             <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
-                {/* Top border starting before the clipped corner and shooting past the right edge */}
-                <div className="absolute top-0 left-[96px] -right-3 h-px bg-zinc-300" />
-                {/* Left border starting above the clipped corner and shooting past the bottom edge */}
-                <div className="absolute top-[96px] -bottom-3 left-0 w-px bg-zinc-300" />
+                {/* Top border: start relative to the fold, shoot past right */}
+                <div className="absolute top-0 left-[106px] -right-3 h-px bg-zinc-300" />
+                {/* Left border: start below the fold, shoot past bottom */}
+                <div className="absolute top-[106px] -bottom-3 left-0 w-px bg-zinc-300" />
 
-                {/* Diagonal clipped border to match the clip path outline and overshoot */}
+                {/* Diagonal clipped border overshoot */}
                 <div
                     className="absolute top-[118px] left-[-8px] h-px bg-zinc-300 origin-top-left"
-                    style={{ width: '178.2px', transform: 'rotate(-45deg)' }}
+                    style={{ width: '158px', transform: 'rotate(-45deg)' }}
                 />
 
-                {/* Right border extending past the top and bottom edge */}
+                {/* Right border extending past top/bottom */}
                 <div className="absolute -top-3 -bottom-5 right-0 w-px bg-zinc-200" />
-                {/* Bottom border extending past the left and right edge */}
+                {/* Bottom border extending past left/right */}
                 <div className="absolute bottom-0 -left-3 -right-5 h-px bg-zinc-200" />
             </div>
 
-            {/* Main Card Content - clipped for document icon fold on top-left */}
+            {/* Main Card Content */}
             <div
                 className="relative h-full w-full bg-gradient-to-t from-zinc-100 to-white flex flex-col justify-between shadow-sm transition-all group-hover:shadow-md"
                 style={{
@@ -73,7 +72,7 @@ export default function DestinationCard({
                 }}
             >
 
-                {/* Background image inside the card, fading smoothly — naturally clipped by card's clip-path */}
+                {/* Background image inside card */}
                 <div
                     className="absolute -top-16 left-0 right-0 h-72 z-[1] pointer-events-none opacity-[0.05] mix-blend-multiply"
                     style={{
@@ -88,37 +87,33 @@ export default function DestinationCard({
                     />
                 </div>
 
-                {/* Retro-tech Bayer Dithering Overlay - Full Card Coverage */}
+                {/* Bayer Dithering Overlay */}
                 <div
                     className="absolute inset-0 z-[10] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-multiply"
                     style={{
-                        /* 4x4 Monochrome Bayer checkerboard pattern to remain lightweight via SVG Data URI */
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h2v2H0zM2 2h2v2H2z' fill='%2371717a' fill-opacity='0.18' fill-rule='evenodd'/%3E%3C/svg%3E")`,
                         backgroundRepeat: 'repeat',
-                        /* Smooth fade-in below the top background image */
                         maskImage: 'linear-gradient(to bottom, transparent 60px, black 160px)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 60px, black 160px)'
                     }}
                 />
 
                 <div className="px-6 flex-1 flex flex-col pt-24 relative z-[20]">
-                    {/* Top Content - wrapped in relative z-10 for readable layers */}
                     <div className="relative z-10">
                         <div className="relative z-30 inline-block text-zinc-500 text-[10px] font-mono mb-1 tracking-wider uppercase">
                             // {categoryCode}
                         </div>
-                        <h3 className="text-2xl font-bold text-zinc-900 leading-tight mb-2 line-clamp-2 min-h-[3.5rem]">
+                        <h3 className="text-xl md:text-2xl font-bold text-zinc-900 leading-tight mb-2 line-clamp-2 min-h-[3.5rem]">
                             {name}
                         </h3>
                         {/* Action + Status Row */}
-                        <div className="flex items-center justify-between mb-4 mt-2">
-                            <button className="flex items-center gap-2 rounded-none bg-white text-zinc-500 border border-zinc-200 px-3 py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm w-max">
+                        <div className="flex items-center justify-between mb-4 mt-2 gap-4">
+                            <button className="flex items-center gap-2 rounded-none bg-white text-zinc-500 border border-zinc-200 px-3 py-2 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black active:bg-black active:text-white transition-all shadow-sm w-max h-10 md:h-auto">
                                 <MapPin size={12} className="shrink-0" />
                                 Check Location
                             </button>
 
-                            {/* Status Indicator (Open / Closed) */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 bg-zinc-50/80 p-1 md:p-0 md:bg-transparent">
                                 <Circle
                                     size={16}
                                     strokeWidth={3}
@@ -157,27 +152,22 @@ export default function DestinationCard({
 
                 {/* Full-width Bottom Button Area */}
                 <div className="w-full relative z-[20] bg-gradient-to-t from-zinc-50 to-transparent pt-4">
-                    <div className="text-center text-[11px] font-mono text-zinc-500 mb-2 truncate px-6 font-semibold tracking-widest">
+                    <div className="text-center text-[10px] md:text-[11px] font-mono text-zinc-500 mb-2 truncate px-6 font-semibold tracking-widest sm:block hidden">
                         &gt;&gt;&gt; Route Available &gt;&gt;&gt;
                     </div>
-                    {/* Progress track overlay aesthetic with prism shapes, resting on button */}
-                    <div className="absolute bottom-[54px] left-0 right-0 flex justify-center items-center pointer-events-none">
+                    {/* Progress track overlay aesthetic */}
+                    <div className="absolute bottom-[66px] md:bottom-[54px] left-0 right-0 flex justify-center items-center pointer-events-none sm:flex hidden">
                         <div className="w-3/4 h-px bg-zinc-300 flex justify-between items-center px-4">
-                            {/* Left Prism */}
                             <div className="w-2.5 h-2.5 bg-zinc-300 rotate-45" />
-                            {/* Center Animated Prism */}
                             <div className="relative flex justify-center items-center">
-                                {/* Outer glowing/pulsing effect - activated on hover */}
                                 <div className="absolute w-4 h-4 bg-zinc-800/20 rotate-45 transition-transform duration-300 group-hover:animate-ping" />
-                                {/* Main larger prism */}
                                 <div className="w-3.5 h-3.5 bg-zinc-800 border border-white rotate-45 z-10 shadow-sm" />
                             </div>
-                            {/* Right Prism */}
                             <div className="w-2.5 h-2.5 bg-zinc-300 rotate-45" />
                         </div>
                     </div>
 
-                    <Link href="/student/document-view" className="w-full py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-50 flex justify-center items-center uppercase tracking-wide">
+                    <Link href="/student/document-view" className="w-full py-5 md:py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-900 hover:text-white active:bg-zinc-800 flex justify-center items-center uppercase tracking-wide h-16 md:h-auto">
                         Pack Documents
                     </Link>
                 </div>

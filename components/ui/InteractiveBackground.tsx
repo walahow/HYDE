@@ -11,7 +11,7 @@ interface InteractiveBackgroundProps {
 
 export function InteractiveBackground({
     className,
-    maskSize = "900px",
+    maskSize = "min(90vw, 900px)",
     interactiveSource = 'window'
 }: InteractiveBackgroundProps) {
     return (

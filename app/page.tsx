@@ -70,29 +70,24 @@ export default function DashboardMahasiswaPage() {
   }, []);
 
   return (
-    <div className="relative h-screen w-full flex flex-col overflow-hidden bg-white">
+    <div className="relative min-h-screen w-full flex flex-col overflow-x-hidden bg-white">
       {/* Background Interactive Grid */}
       <InteractiveBackground />
 
 
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col">
-        <div className="pointer-events-auto shrink-0">
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <div className="shrink-0">
           <TopNavbar user={currentUser} />
         </div>
 
         {/* Search Header Container - Constrained Width */}
-        <div className="pointer-events-auto mx-auto w-full max-w-5xl px-6 pt-10 pb-2 shrink-0">
+        <div className="mx-auto w-full max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-2 shrink-0">
           {/* Search bar Area */}
           <div className="relative mb-6 inline-block w-full">
             {/* Custom borders for extended intersecting lines on the search bar */}
-            {/* Top border: more overshoot left (top-left), less right (top-right) */}
             <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
-            {/* Left border: more overshoot top (top-left), less bottom (bottom-left) */}
             <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
-
-            {/* Right border: less overshoot top (top-right), more bottom (bottom-right) */}
             <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
-            {/* Bottom border: less overshoot left (bottom-left), more right (bottom-right) */}
             <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
 
             <input
@@ -100,12 +95,12 @@ export default function DashboardMahasiswaPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light"
+              className="w-full relative z-0 rounded-none bg-white py-3 pl-4 pr-4 h-12 text-base text-zinc-900 shadow-sm focus:outline-none focus:bg-zinc-50 transition-colors font-mono font-light border border-zinc-100 md:border-none"
             />
             {/* Custom placeholder overlay with animation */}
             {!query && (
               <div
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-base flex items-center"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 z-10 font-mono font-light text-sm md:text-base flex items-center"
                 aria-hidden="true"
               >
                 [ ⌘K ] | &gt; SEARCH DESTINATION
@@ -117,36 +112,36 @@ export default function DashboardMahasiswaPage() {
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="h-px flex-1 bg-zinc-200" />
-            <span className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest">
+            <span className="text-[10px] md:text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest text-center px-2">
               {filtered.length} TUJUAN TERSEDIA
             </span>
             <div className="h-px flex-1 bg-zinc-200" />
           </div>
         </div >
 
-        {/* Full-width Cards Container Area - Drives Horizontal Scrolling */}
+        {/* Full-width Cards Container Area */}
         {
           filtered.length === 0 ? (
-            <div className="pointer-events-none flex-1 flex flex-col items-center pt-16">
-              <div className="pointer-events-auto flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center pt-16 px-6">
+              <div className="flex flex-col items-center text-center">
                 <FileText size={40} className="mb-3 text-zinc-300" />
-                <p className="text-sm text-zinc-500">
-                  Tidak ada tujuan yang cocok dengan pencarian Anda.
+                <p className="text-sm text-zinc-500 font-mono">
+                  TIDAK ADA HASIL DITEMUKAN.
                 </p>
               </div>
             </div>
           ) : (
             <div
               ref={wrapperRef}
-              className="pointer-events-none flex-1 w-full overflow-hidden self-stretch pb-4 pt-16"
+              className="flex-1 w-full overflow-y-auto md:overflow-x-hidden md:overflow-y-hidden self-stretch pb-10 md:pb-4 md:pt-16"
             >
-              {/* This content ref holds the wide array of cards and physically scrolls left/right. Aligned to bottom to use more space. */}
+              {/* Desktop: Horizontal Scroll (Wide Array) | Mobile: Vertical Stack (Responsive Grid) */}
               <div
                 ref={contentRef}
-                className="flex flex-nowrap h-full items-center gap-16 px-[10vw] sm:px-24 xl:px-32 pr-[30vw] w-max pb-2"
+                className="flex flex-col md:flex-row md:flex-nowrap h-full items-center md:items-center gap-12 md:gap-16 px-6 md:px-[10vw] lg:px-24 xl:px-32 pr-6 md:pr-[30vw] w-full md:w-max pb-2"
               >
                 {filtered.map((dest) => (
-                  <div key={dest.id} className="pointer-events-auto shrink-0 group">
+                  <div key={dest.id} className="shrink-0 group w-full max-w-sm md:w-96">
                     <DestinationCard
                       id={dest.id}
                       categoryCode={dest.categoryCode}
