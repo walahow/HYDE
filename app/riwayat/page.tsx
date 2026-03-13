@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FileText, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
 import HoverCard from "@/components/ui/HoverCard";
@@ -41,10 +42,10 @@ export default function RiwayatMahasiswaPage() {
     return (
         <div className="relative h-screen w-screen flex flex-col bg-white overflow-hidden">
             <InteractiveBackground />
-            
+
             {/* Main Layout Container */}
             <div className="relative z-10 flex flex-col h-screen w-full">
-                
+
                 {/* Fixed Top Section: Navbar + Search Area */}
                 <div className="shrink-0">
                     <TopNavbar user={currentUser} />
@@ -87,7 +88,7 @@ export default function RiwayatMahasiswaPage() {
                 </div>
 
                 {/* Scrollable Document List Area with Fade Masks */}
-                <div 
+                <div
                     className="flex-1 overflow-y-auto px-4 md:px-6"
                     style={{
                         maskImage: 'linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent 100%)',
@@ -129,10 +130,13 @@ export default function RiwayatMahasiswaPage() {
                                             </div>
 
                                             {/* Right: detail button */}
-                                            <button className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:bg-black active:text-white sm:w-auto w-full h-11 sm:h-auto">
+                                            <Link
+                                                href="/student/document-view"
+                                                className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:bg-black active:text-white sm:w-auto w-full h-11 sm:h-auto"
+                                            >
                                                 DETAIL
                                                 <ExternalLink size={12} />
-                                            </button>
+                                            </Link>
                                         </div>
                                     </HoverCard>
                                 ))}

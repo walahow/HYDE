@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FileText, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
 import HoverCard from "@/components/ui/HoverCard";
@@ -146,15 +147,15 @@ export default function AdminHistoryPage() {
                                             </div>
 
                                             {/* Right: action button */}
-                                            <button 
-                                                onClick={() => window.location.href = "/admin/document-view"}
+                                            <Link
+                                                href="/admin/document-view"
                                                 className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 w-full md:w-auto px-4 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black active:bg-zinc-100 md:active:bg-black transition-all shadow-sm group h-12 md:h-auto"
                                             >
                                                 <span>[</span>
                                                 <span>VIEW_RECORD</span>
                                                 <ExternalLink size={12} className="ml-0.5" />
                                                 <span>]</span>
-                                            </button>
+                                            </Link>
                                         </div>
                                     </HoverCard>
                                 ))}

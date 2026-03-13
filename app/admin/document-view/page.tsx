@@ -10,8 +10,13 @@ import {
   ShieldCheck,
   User,
   Fingerprint,
-  MessageSquare
+  MessageSquare,
+  Info,
+  Search,
+  Shield,
+  ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
 
 type DocType = "Digital" | "Hybrid";
 type AdminStatus = "PENDING" | "REVISION_REQUIRED" | "APPROVED";
@@ -69,7 +74,15 @@ export default function AdminDocumentView() {
         {/* LEFT COLUMN: DOCUMENT VIEWPORT */}
         <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white min-w-0">
           <div className="h-14 border-b border-zinc-200 flex items-center px-4 md:px-6 justify-between bg-zinc-50/50">
-            <div className="flex items-center gap-3 font-mono text-[9px] md:text-[10px] font-medium tracking-tight overflow-hidden">
+            <div className="flex items-center gap-4 md:gap-6 font-mono text-[9px] md:text-[10px] font-medium tracking-tight overflow-hidden">
+              <Link
+                href="/admin/riwayat"
+                className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 transition-colors py-1 group/back"
+              >
+                <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
+                <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK</span>
+              </Link>
+              <span className="text-zinc-300 hidden md:inline ml-1">|</span>
               <span className="text-zinc-400 truncate hidden md:inline">[ <span className="text-yellow-500/80">📂</span> REPOSITORY: /incoming ] &gt;</span>
               <span className="text-zinc-300 hidden md:inline">|</span>
               <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
