@@ -23,7 +23,7 @@ export default function AdminDocumentView() {
   const [feedback, setFeedback] = useState("");
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white pb-20">
+    <div className="h-screen overflow-hidden bg-[#f5f5f7] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white flex flex-col">
       {/* MOCK STATE TOGGLES (FOR PREVIEW) */}
       <div className="fixed top-0 left-0 right-0 z-[60] bg-zinc-900 text-zinc-100 p-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-mono tracking-widest border-b border-zinc-800">
         <div className="flex items-center gap-4">
@@ -65,21 +65,32 @@ export default function AdminDocumentView() {
         </div>
       </div>
 
-      <div className="mt-20 sm:mt-10 flex flex-col md:flex-row h-screen overflow-y-auto md:overflow-hidden relative z-10">
+      <div className="mt-20 sm:mt-10 flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden relative z-10 max-w-[1800px] w-full mx-auto border-x border-transparent xl:border-zinc-200/50 shadow-2xl">
         {/* LEFT COLUMN: DOCUMENT VIEWPORT */}
-        <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white shrink-0">
+        <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white min-w-0">
           <div className="h-14 border-b border-zinc-200 flex items-center px-4 md:px-6 justify-between bg-zinc-50/50">
             <div className="flex items-center gap-3 font-mono text-[9px] md:text-[10px] font-medium tracking-tight overflow-hidden">
-              <span className="text-zinc-400 truncate">[ <span className="text-yellow-500/80">📂</span> REPOSITORY: /incoming ] &gt;</span>
-              <span className="text-zinc-300">|</span>
+              <span className="text-zinc-400 truncate hidden md:inline">[ <span className="text-yellow-500/80">📂</span> REPOSITORY: /incoming ] &gt;</span>
+              <span className="text-zinc-300 hidden md:inline">|</span>
               <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
                 <span className="font-bold truncate">ENTITY_ID: {selectedFile}</span>
                 <ChevronDown size={12} className="text-zinc-400 shrink-0" />
               </button>
             </div>
-            <div className="flex gap-1.5 shrink-0">
-              <div className="w-1.5 h-1.5 bg-zinc-900" />
-              <div className="w-1.5 h-1.5 border border-zinc-300" />
+
+            {/* RELOCATED STATUS INDICATOR (REPLACES DECORATIVE BLOCKS) */}
+            <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2">
+              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "PENDING" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                PENDING
+              </span>
+              <span className="text-zinc-200">→</span>
+              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "REVISION_REQUIRED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                REVISION
+              </span>
+              <span className="text-zinc-300">→</span>
+              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "APPROVED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                APPROVED
+              </span>
             </div>
           </div>
 
@@ -108,32 +119,13 @@ export default function AdminDocumentView() {
         </div>
 
         {/* RIGHT COLUMN: ADMIN CONTROL PANEL */}
-        <div className="w-full md:w-[40%] flex flex-col bg-white overflow-hidden shrink-0">
-          {/* A. STATUS CARD (SLIMMER & NON-INTERACTIVE) */}
-          <div className="p-6 md:p-8 border-b border-zinc-100">
-            <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase flex items-center gap-2">
-              <ShieldCheck size={12} className="text-zinc-300" /> STATUS_AUTHORITY_OVERRIDE
-            </h2>
-            <div className="relative overflow-visible">
-              <div className="absolute -top-0 -left-6 -right-6 h-px bg-zinc-100 pointer-events-none" />
-              <div className="absolute bottom-0 -left-6 -right-6 h-px bg-zinc-100 pointer-events-none" />
-
-              <div className="flex flex-col w-full py-1">
-                <span className="font-mono font-bold text-[8px] tracking-[0.3em] text-zinc-400 uppercase mb-3 md:mb-2">CURRENT_EXECUTION_PHASE</span>
-                <div className="flex flex-wrap items-center gap-1.5 md:gap-2 font-mono text-[9px] md:text-[10px] font-bold">
-                  <span className={`px-2 py-1 transition-all border ${adminStatus === "PENDING" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/60 border-transparent"}`}>
-                    SENDING
-                  </span>
-                  <span className="text-zinc-200 hidden xs:inline">→</span>
-                  <span className={`px-2 py-1 transition-all border ${adminStatus === "REVISION_REQUIRED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/60 border-transparent"}`}>
-                    REVISION
-                  </span>
-                  <span className="text-zinc-300 hidden xs:inline">→</span>
-                  <span className={`px-2 py-1 transition-all border ${adminStatus === "APPROVED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/60 border-transparent"}`}>
-                    APPROVED
-                  </span>
-                </div>
-              </div>
+        <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[480px] flex flex-col bg-white overflow-hidden shrink-0 transition-all duration-500 ease-in-out">
+          {/* RELOCATED STATUS (Mobile only view / removed from sidebar) */}
+          <div className="block sm:hidden p-4 border-b border-zinc-100 bg-zinc-50/50">
+            <div className="flex items-center justify-between font-mono text-[8px] font-bold">
+              <span className={`px-2 py-1 border ${adminStatus === "PENDING" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>PENDING</span>
+              <span className={`px-2 py-1 border ${adminStatus === "REVISION_REQUIRED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>REVISION</span>
+              <span className={`px-2 py-1 border ${adminStatus === "APPROVED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>APPROVED</span>
             </div>
           </div>
 
@@ -143,7 +135,7 @@ export default function AdminDocumentView() {
             <div className="p-4 relative overflow-visible border border-zinc-50">
               <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
               <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
-              
+
               <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
                 <div className="flex items-center gap-3">
                   <User size={14} className="text-zinc-400 shrink-0" />
@@ -158,16 +150,16 @@ export default function AdminDocumentView() {
           </div>
 
           {/* C. COMMAND INPUT */}
-          <div className="flex-1 p-6 md:p-8 flex flex-col overflow-hidden min-h-[250px]">
+          <div className="flex-1 p-6 md:p-8 flex flex-col overflow-hidden min-h-[200px] md:min-h-0">
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase flex items-center gap-2">
               <MessageSquare size={12} className="text-zinc-300" /> COMMAND_INPUT_TERMINAL
             </h2>
-            <div className="flex-1 relative group">
+            <div className="flex-1 relative group md:h-0">
               <textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="> INPUT_FEEDBACK_OR_REVISION_NOTES_HERE..._"
-                className="w-full h-full bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-900 transition-colors resize-none relative z-10 h-32 md:h-full"
+                className="w-full h-full bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-900 transition-colors resize-none relative z-10 min-h-[120px] md:min-h-0"
               />
               <div className="absolute inset-0 pointer-events-none opacity-[0.05] mask-bayer-fade z-20" />
             </div>
@@ -192,7 +184,7 @@ export default function AdminDocumentView() {
               <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-200 transition-all group-hover/btn-primary:w-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
               <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-200 transition-all group-hover/btn-primary:h-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
 
-              <button 
+              <button
                 onClick={() => {
                   if (adminStatus === "PENDING") setAdminStatus("REVISION_REQUIRED");
                   else if (adminStatus === "REVISION_REQUIRED") setAdminStatus("APPROVED");
@@ -210,14 +202,14 @@ export default function AdminDocumentView() {
                 )}
               </button>
             </div>
-            
+
             {/* ACTION_B: SECONDARY COMMAND */}
             {adminStatus !== "APPROVED" && (
               <div className="relative group/btn-secondary">
                 <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-100 transition-all group-hover/btn-secondary:w-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
                 <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-100 transition-all group-hover/btn-secondary:h-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
 
-                <button 
+                <button
                   onClick={() => setAdminStatus("APPROVED")}
                   className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm"
                 >

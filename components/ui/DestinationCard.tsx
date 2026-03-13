@@ -20,11 +20,11 @@ export default function DestinationCard({
     acceptedDocuments,
 }: DestinationCardProps) {
     return (
-        <div className="group relative w-full max-w-[384px] md:w-96 shrink-0 h-[480px] md:h-[460px] rounded-none bg-transparent overflow-visible transition-transform duration-300 mx-auto">
+        <div className="group relative w-full max-w-[384px] md:w-[clamp(340px,25vw,400px)] shrink-0 h-[480px] md:h-[clamp(440px,60vh,500px)] rounded-none bg-transparent overflow-visible transition-all duration-500 mx-auto">
 
             {/* Pop-out building illustration */}
             <div
-                className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 sm:w-72 sm:h-72 z-30 pointer-events-none"
+                className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 z-30 pointer-events-none"
                 style={{
                     WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%), linear-gradient(to bottom, black 50%, transparent 100%)',

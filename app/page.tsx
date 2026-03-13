@@ -81,7 +81,7 @@ export default function DashboardMahasiswaPage() {
         </div>
 
         {/* Search Header Container - Constrained Width */}
-        <div className="mx-auto w-full max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-2 shrink-0">
+        <div className="mx-auto w-full max-w-5xl xl:max-w-7xl px-4 md:px-6 pt-6 md:pt-10 pb-2 shrink-0 transition-all duration-500">
           {/* Search bar Area */}
           <div className="relative mb-6 inline-block w-full">
             {/* Custom borders for extended intersecting lines on the search bar */}
@@ -138,7 +138,7 @@ export default function DashboardMahasiswaPage() {
               {/* Desktop: Horizontal Scroll (Wide Array) | Mobile: Vertical Stack (Responsive Grid) */}
               <div
                 ref={contentRef}
-                className="flex flex-col md:flex-row md:flex-nowrap h-full items-center md:items-center gap-12 md:gap-16 px-6 md:px-[10vw] lg:px-24 xl:px-32 pr-6 md:pr-[30vw] w-full md:w-max pb-2"
+                className="flex flex-col md:flex-row md:flex-nowrap h-full items-center md:items-center gap-12 md:gap-16 px-6 md:px-[10vw] lg:px-24 xl:px-32 w-full md:w-max pb-2"
               >
                 {filtered.map((dest) => (
                   <div key={dest.id} className="shrink-0 group w-full max-w-sm md:w-96">
@@ -153,6 +153,9 @@ export default function DashboardMahasiswaPage() {
                     />
                   </div>
                 ))}
+
+                {/* Visual spacer to prevent abrupt end on horizontal scroll */}
+                <div className="hidden md:block w-[20vw] shrink-0 h-full" aria-hidden="true" />
               </div>
             </div>
           )
