@@ -24,6 +24,7 @@ export default function StudentDocumentView() {
   const [docType, setDocType] = useState<DocType>("Digital");
   const [docStatus, setDocStatus] = useState<DocStatus>("Needs Revision");
   const [selectedFile, setSelectedFile] = useState("PAYLOAD_01.PDF");
+  const [studentReply, setStudentReply] = useState("");
 
   return (
     <div className="h-screen overflow-hidden bg-[#f5f5f7] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white flex flex-col">
@@ -212,9 +213,18 @@ export default function StudentDocumentView() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-zinc-900">
-                  <span className="font-bold opacity-50">&gt;</span>
-                  <span className="w-2 h-0.5 bg-zinc-900 animate-terminal-blink self-end mb-1" />
+                <div className="flex gap-2 text-zinc-900 group-focus-within/terminal:text-black transition-colors relative min-h-[4rem] items-start">
+                  <span className="font-bold opacity-50 shrink-0 leading-relaxed">&gt;</span>
+                  <div className="flex-1 font-mono text-[11px] text-zinc-700 leading-relaxed break-all relative">
+                    {studentReply}
+                    <span className="inline-block w-2 h-0.5 bg-zinc-900 animate-terminal-blink ml-1 align-middle" />
+                    <textarea
+                      value={studentReply}
+                      onChange={(e) => setStudentReply(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-text resize-none focus:outline-none"
+                      autoFocus
+                    />
+                  </div>
                 </div>
               </div>
             </div>

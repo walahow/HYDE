@@ -48,14 +48,14 @@ export default function DestinationCard({
             {/* Custom borders for extended intersecting lines */}
             <div className="absolute inset-0 z-20 pointer-events-none overflow-visible">
                 {/* Top border: start relative to the fold, shoot past right */}
-                <div className="absolute top-0 left-[106px] -right-3 h-px bg-zinc-300" />
+                <div className="absolute top-0 left-[100px] -right-3 h-px bg-zinc-300" />
                 {/* Left border: start below the fold, shoot past bottom */}
-                <div className="absolute top-[106px] -bottom-3 left-0 w-px bg-zinc-300" />
+                <div className="absolute top-[100px] -bottom-3 left-0 w-px bg-zinc-300" />
 
                 {/* Diagonal clipped border overshoot */}
                 <div
-                    className="absolute top-[118px] left-[-8px] h-px bg-zinc-300 origin-top-left"
-                    style={{ width: '158px', transform: 'rotate(-45deg)' }}
+                    className="absolute top-[120px] left-[-10px] h-px bg-zinc-300/80 origin-top-left"
+                    style={{ width: '185px', transform: 'rotate(-45deg)' }}
                 />
 
                 {/* Right border extending past top/bottom */}

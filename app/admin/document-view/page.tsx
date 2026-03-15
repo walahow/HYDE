@@ -165,14 +165,37 @@ export default function AdminDocumentView() {
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase flex items-center gap-2">
               <MessageSquare size={12} className="text-zinc-300" /> COMMAND_INPUT_TERMINAL
             </h2>
-            <div className="flex-1 relative group md:h-0">
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="> INPUT_FEEDBACK_OR_REVISION_NOTES_HERE..._"
-                className="w-full h-full bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-900 transition-colors resize-none relative z-10 min-h-[120px] md:min-h-0"
-              />
-              <div className="absolute inset-0 pointer-events-none opacity-[0.05] mask-bayer-fade z-20" />
+            <div className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto md:max-h-none flex flex-col gap-4 relative group/terminal">
+              {/* Bayer Dithering Overlay */}
+              <div className="absolute inset-0 pointer-events-none opacity-[0.10] mask-bayer-fade" />
+
+              <div className="relative z-10 space-y-4">
+                <div className="text-zinc-400 flex gap-3">
+                  <span className="shrink-0">[10:45:12]</span>
+                  <span>SYSTEM: SESSION_ENCRYPTED_AND_INITIALIZED</span>
+                </div>
+
+                <div className="flex gap-3">
+                  <span className="text-zinc-900 font-bold shrink-0 opacity-50">&gt; [11:20:05]</span>
+                  <div className="flex flex-col">
+                    <span className="text-zinc-400 text-[9px] font-bold tracking-widest uppercase mb-1">Internal_System_Log</span>
+                    <span className="text-zinc-600 leading-relaxed">"Reviewing inbound transmission metadata... Integrity verified."</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 text-zinc-900 group-focus-within/terminal:text-black transition-colors relative min-h-[4rem] items-start">
+                  <span className="font-bold opacity-50 shrink-0 leading-relaxed">&gt;</span>
+                  <div className="flex-1 font-mono text-[11px] text-zinc-700 leading-relaxed break-all relative">
+                    {feedback}
+                    <span className="inline-block w-2 h-0.5 bg-zinc-900 animate-terminal-blink ml-1 align-middle" />
+                    <textarea
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-text resize-none focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
