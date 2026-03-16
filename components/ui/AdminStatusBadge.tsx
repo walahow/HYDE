@@ -1,45 +1,35 @@
 "use client";
 
 import React from "react";
-
-export type AdminStatusType = 
-    | "NEW_ARRIVAL" 
-    | "ACTION_REQUIRED" 
-    | "APPROVED" 
-    | "IN_REVISION" 
-    | "COMPLETED";
+import type { DocumentStatus } from "@/lib/types";
 
 interface AdminStatusBadgeProps {
-    status: AdminStatusType;
+    status: DocumentStatus;
 }
 
 const config: Record<
-    AdminStatusType,
+    DocumentStatus,
     { label: string; className: string; dotClass: string; animate?: boolean }
 > = {
-    NEW_ARRIVAL: {
+    DRAFT: {
         label: "SYS: NEW_ARRIVAL",
         className: "bg-white text-zinc-900 border border-zinc-900",
         dotClass: "bg-zinc-900",
         animate: true,
     },
-    ACTION_REQUIRED: {
-        label: "ACTION_REQUIRED",
-        className: "bg-white text-zinc-900 border border-zinc-900",
-        dotClass: "bg-zinc-900",
-        animate: true,
-    },
-    APPROVED: {
-        label: "SYS: APPROVED",
+    REVIEWING: {
+        label: "REVIEWING",
         className: "bg-zinc-900 text-white border border-zinc-900",
         dotClass: "bg-white",
+        animate: true,
     },
-    IN_REVISION: {
-        label: "IN_REVISION",
+    REVISION: {
+        label: "ACTION_REQUIRED",
         className: "bg-zinc-100 text-zinc-600 border border-zinc-200",
         dotClass: "bg-zinc-400",
+        animate: true,
     },
-    COMPLETED: {
+    VALIDATED: {
         label: "COMPLETED",
         className: "bg-zinc-50 text-zinc-400 border border-zinc-200 shadow-none",
         dotClass: "bg-zinc-300",

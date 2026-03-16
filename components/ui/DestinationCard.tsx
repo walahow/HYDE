@@ -12,6 +12,7 @@ interface DestinationCardProps {
 }
 
 export default function DestinationCard({
+    id,
     categoryCode,
     name,
     faculty,
@@ -129,18 +130,13 @@ export default function DestinationCard({
                         </div>
                     </div>
 
-                    {/* Middle Content Area */}
                     <div className="space-y-3 mt-4 flex-1 relative z-10">
                         <div className="h-px w-full bg-zinc-200" />
 
                         <div className="text-xs text-zinc-600 space-y-2 font-mono">
                             <p className="flex items-start gap-2">
                                 <span className="w-1.5 h-1.5 bg-zinc-400 rounded-sm inline-block mt-1 shrink-0" />
-                                <span><span className="text-zinc-400">Faculty:</span> {faculty}</span>
-                            </p>
-                            <p className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-sm inline-block mt-1 shrink-0" />
-                                <span><span className="text-zinc-400">Active Docs:</span> {documentCount}</span>
+                                <span><span className="text-zinc-400">Admin:</span> {faculty}</span>
                             </p>
                             <p className="flex items-start gap-2">
                                 <span className="w-1.5 h-1.5 bg-zinc-800 rounded-sm inline-block mt-1 shrink-0 shadow-sm" />
@@ -167,7 +163,10 @@ export default function DestinationCard({
                         </div>
                     </div>
 
-                    <Link href="/student/document-view" className="w-full py-5 md:py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-900 hover:text-white active:bg-zinc-800 flex justify-center items-center uppercase tracking-wide h-16 md:h-auto">
+                    <Link 
+                        href={`/student/document-view?destId=${id}`} 
+                        className="w-full py-5 md:py-4 bg-white text-zinc-900 border-t border-zinc-200 text-sm font-bold transition-all hover:bg-zinc-900 hover:text-white active:bg-zinc-800 flex justify-center items-center uppercase tracking-wide h-16 md:h-auto"
+                    >
                         Pack Documents
                     </Link>
                 </div>

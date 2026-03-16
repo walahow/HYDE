@@ -1,15 +1,103 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  previewFeatures = ["mongodb"]
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mongodb"
   url      = env("MONGODB_URI")
+}
+
+// Enums
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+// Status lifecycle:
+// DRAFT      → student just submitted the transaction
+// REVIEWING  → admin has opened and is reviewing it
+// REVISION   → admin requests changes from student
+// VALIDATED  → admin accepted and applied digital signature
+enum DocumentStatus {
+  DRAFT
+  REVIEWING
+  REVISION
+  VALIDATED
+}
+
+model User {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  autoId            Int      @unique // sequential display ID (e.g. 001)
+  nim               String   @unique // student NIM or admin staff ID
+  name              String
+  password          String // bcrypt hashed
+  role              Role
+  createdAt         DateTime @default(now())
+
+  // Admin-only fields (null for students)
+  destinationName   String?
+  categoryCode      String?
+  acceptedDocuments String[] @default([])
+  isOpen            Boolean?
+
+  // Relations
+  studentTxns   Transaction[] @relation("StudentTxns")
+  adminTxns     Transaction[] @relation("AdminTxns")
+  uploadedFiles File[]
+  sentMessages  Message[]
+  statusChanges StatusLog[]
+}
+
+// The core submission record — what shows on dashboard & history cards.
+model Transaction {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  documentType String // encrypted at app layer; visible only to involved student & admin
+  status       DocumentStatus @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  completedAt  DateTime? // set when status → VALIDATED
+
+  studentId String @db.ObjectId
+  student   User   @relation("StudentTxns", fields: [studentId], references: [id])
+  adminId   String @db.ObjectId
+  admin     User   @relation("AdminTxns", fields: [adminId], references: [id])
+
+  files      File[] // multiple uploads supported
+  messages   Message[]
+  statusLogs StatusLog[]
+}
+
+// A transaction may require multiple files (e.g. KRS form + recommendation letter).
+// Each is stored as a separate File entry.
+model File {
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  transactionId    String      @db.ObjectId
+  transaction      Transaction @relation(fields: [transactionId], references: [id])
+  fileUrl          String // UUID-masked storage path
+  originalFileName String // encrypted at app layer; visible only to involved student & admin
+  uploadedById     String      @db.ObjectId
+  uploadedBy       User        @relation(fields: [uploadedById], references: [id])
+  uploadedAt       DateTime    @default(now())
+}
+
+model Message {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  transactionId String      @db.ObjectId
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  senderId      String      @db.ObjectId
+  sender        User        @relation(fields: [senderId], references: [id])
+  senderRole    Role // snapshot; avoids join for display
+  content       String
+  createdAt     DateTime    @default(now())
+}
+
+model StatusLog {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  transactionId String          @db.ObjectId
+  transaction   Transaction     @relation(fields: [transactionId], references: [id])
+  changedById   String          @db.ObjectId
+  changedBy     User            @relation(fields: [changedById], references: [id])
+  fromStatus    DocumentStatus? // null on first DRAFT creation
+  toStatus      DocumentStatus
+  note          String? // revision instructions or system note
+  changedAt     DateTime        @default(now())
 }

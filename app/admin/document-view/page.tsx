@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   FileText,
   ChevronDown,
@@ -17,60 +18,99 @@ import {
   ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
+import type { DocumentStatus } from "@/lib/types";
 
 type DocType = "Digital" | "Hybrid";
-type AdminStatus = "PENDING" | "REVISION_REQUIRED" | "APPROVED";
+
+// Admin ID — replace with session once auth is implemented
+const ADMIN_ID = "69b6cd888d2d340d5984ce5c";
 
 export default function AdminDocumentView() {
+  const searchParams = useSearchParams();
+  const txId = searchParams.get("txId");
+
   const [docType, setDocType] = useState<DocType>("Digital");
-  const [adminStatus, setAdminStatus] = useState<AdminStatus>("PENDING");
+  const [status, setStatus] = useState<DocumentStatus>("DRAFT");
   const [selectedFile, setSelectedFile] = useState("PAYLOAD_01.PDF");
   const [feedback, setFeedback] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string } | null>(null);
+  const [statusLogs, setStatusLogs] = useState<Array<{
+    id: string;
+    changedAt: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    changedBy?: { name: string; role: string };
+  }>>([]);
+
+  const pipelineLabels: Record<DocumentStatus, string> = {
+    DRAFT: "DRAFT",
+    REVIEWING: "REVIEWING",
+    REVISION: "REVISION",
+    VALIDATED: "VALIDATED",
+  };
+
+  async function refreshLogs() {
+    if (!txId) return;
+    const res = await fetch(`/api/transactions/${txId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setStatusLogs(data.statusLogs ?? []);
+  }
+
+  // On mount: fetch real status, then auto-transition DRAFT → REVIEWING
+  useEffect(() => {
+    if (!txId) return;
+    async function initTransaction() {
+      const res = await fetch(`/api/transactions/${txId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setStatus(data.status);
+      setStatusLogs(data.statusLogs ?? []);
+      setTxInfo({
+        studentName: data.student?.name,
+        nim: data.student?.nim,
+        documentType: data.documentType,
+      });
+      // Auto-set REVIEWING when admin opens a DRAFT transaction
+      if (data.status === "DRAFT") {
+        await fetch(`/api/transactions/${txId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ toStatus: "REVIEWING", changedById: ADMIN_ID, note: "Admin opened the transaction" }),
+        });
+        setStatus("REVIEWING");
+        await refreshLogs();
+      }
+    }
+    initTransaction();
+  }, [txId]);
+
+  async function changeStatus(toStatus: DocumentStatus, note?: string) {
+    if (!txId) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/transactions/${txId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toStatus, changedById: ADMIN_ID, note }),
+      });
+      setStatus(toStatus);
+      setFeedback("");
+      await refreshLogs();
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-[#f5f5f7] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white flex flex-col">
-      {/* MOCK STATE TOGGLES (FOR PREVIEW) */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-zinc-900 text-zinc-100 p-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-mono tracking-widest border-b border-zinc-800">
-        <div className="flex items-center gap-4">
-          <span className="text-zinc-500 hidden sm:inline">DOC_TYPE:</span>
-          <button
-            onClick={() => setDocType("Digital")}
-            className={`px-2 py-1 border transition-all h-8 flex items-center ${docType === "Digital" ? "bg-white text-black border-white" : "border-zinc-700 hover:border-zinc-500 text-zinc-400 active:bg-zinc-800"}`}
-          >
-            [ DIGITAL ]
-          </button>
-          <button
-            onClick={() => setDocType("Hybrid")}
-            className={`px-2 py-1 border transition-all h-8 flex items-center ${docType === "Hybrid" ? "bg-white text-black border-white" : "border-zinc-700 hover:border-zinc-500 text-zinc-400 active:bg-zinc-800"}`}
-          >
-            [ HYBRID ]
-          </button>
-        </div>
-        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
-        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
-          <span className="text-zinc-500 hidden sm:inline">CURRENT_STATUS:</span>
-          <button
-            onClick={() => setAdminStatus("PENDING")}
-            className={`px-2 py-1 border transition-all h-8 flex items-center whitespace-nowrap ${adminStatus === "PENDING" ? "bg-white text-black border-white" : "border-zinc-700 hover:border-zinc-500 text-zinc-400 active:bg-zinc-800"}`}
-          >
-            [ PENDING ]
-          </button>
-          <button
-            onClick={() => setAdminStatus("REVISION_REQUIRED")}
-            className={`px-2 py-1 border transition-all h-8 flex items-center whitespace-nowrap ${adminStatus === "REVISION_REQUIRED" ? "bg-white text-black border-white" : "border-zinc-700 hover:border-zinc-500 text-zinc-400 active:bg-zinc-800"}`}
-          >
-            [ REVISION ]
-          </button>
-          <button
-            onClick={() => setAdminStatus("APPROVED")}
-            className={`px-2 py-1 border transition-all h-8 flex items-center whitespace-nowrap ${adminStatus === "APPROVED" ? "bg-white text-black border-white" : "border-zinc-700 hover:border-zinc-500 text-zinc-400 active:bg-zinc-800"}`}
-          >
-            [ APPROVED ]
-          </button>
-        </div>
-      </div>
+      {/* Header hidden for production */}
 
-      <div className="mt-20 sm:mt-10 flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden relative z-10 max-w-[1800px] w-full mx-auto border-x border-transparent xl:border-zinc-200/50 shadow-2xl">
+      <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden relative z-10 w-full shadow-2xl">
         {/* LEFT COLUMN: DOCUMENT VIEWPORT */}
         <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white min-w-0">
           <div className="h-14 border-b border-zinc-200 flex items-center px-4 md:px-6 justify-between bg-zinc-50/50">
@@ -89,33 +129,21 @@ export default function AdminDocumentView() {
               </button>
             </div>
 
-            {/* RELOCATED STATUS INDICATOR (REPLACES DECORATIVE BLOCKS) */}
+            {/* STATUS PIPELINE */}
             <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2">
-              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "PENDING" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
-                PENDING
-              </span>
-              <span className="text-zinc-200">→</span>
-              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "REVISION_REQUIRED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
-                REVISION
-              </span>
-              <span className="text-zinc-300">→</span>
-              <span className={`px-1.5 py-0.5 transition-all border ${adminStatus === "APPROVED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
-                APPROVED
-              </span>
+              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s, i, arr) => (
+                <React.Fragment key={s}>
+                  <span className={`px-1.5 py-0.5 transition-all border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                    {pipelineLabels[s]}
+                  </span>
+                  {i < arr.length - 1 && <span className="text-zinc-200">→</span>}
+                </React.Fragment>
+              ))}
             </div>
           </div>
 
           <div className="flex-1 p-4 md:p-8 overflow-auto bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
-            {/* Decorative Crossing Lines */}
-            <div className="absolute top-6 md:top-10 left-4 md:left-7 w-12 h-px bg-zinc-300 z-10" />
-            <div className="absolute top-4 md:top-7 left-6 md:left-10 w-px h-12 bg-zinc-300 z-10" />
-            <div className="absolute top-7 md:top-11 right-6 md:right-9 w-8 h-px bg-zinc-300 z-10" />
-            <div className="absolute top-5 md:top-9 right-8 md:right-11 w-px h-8 bg-zinc-300 z-10" />
-            <div className="absolute bottom-7 md:bottom-11 left-6 md:left-9 w-8 h-px bg-zinc-300 z-10" />
-            <div className="absolute bottom-5 md:bottom-9 left-8 md:left-11 w-px h-8 bg-zinc-300 z-10" />
-            <div className="absolute bottom-6 md:bottom-10 right-4 md:right-7 w-12 h-px bg-zinc-300 z-10" />
-            <div className="absolute bottom-4 md:bottom-7 right-6 md:right-10 w-px h-12 bg-zinc-300 z-10" />
-
+            {/* Document Content Container */}
             <div className="w-full h-full max-w-4xl mx-auto bg-white border border-zinc-200 flex flex-col items-center justify-center p-6 md:p-12 transition-all relative overflow-hidden shadow-sm">
               <FileText size={48} className="text-zinc-100 mb-6" />
               <div className="text-center font-mono relative z-10 px-4">
@@ -131,30 +159,34 @@ export default function AdminDocumentView() {
 
         {/* RIGHT COLUMN: ADMIN CONTROL PANEL */}
         <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[480px] flex flex-col bg-white overflow-hidden shrink-0 transition-all duration-500 ease-in-out">
-          {/* RELOCATED STATUS (Mobile only view / removed from sidebar) */}
+          {/* MOBILE STATUS PIPELINE */}
           <div className="block sm:hidden p-4 border-b border-zinc-100 bg-zinc-50/50">
             <div className="flex items-center justify-between font-mono text-[8px] font-bold">
-              <span className={`px-2 py-1 border ${adminStatus === "PENDING" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>PENDING</span>
-              <span className={`px-2 py-1 border ${adminStatus === "REVISION_REQUIRED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>REVISION</span>
-              <span className={`px-2 py-1 border ${adminStatus === "APPROVED" ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>APPROVED</span>
+              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s) => (
+                <span key={s} className={`px-2 py-1 border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>{s}</span>
+              ))}
             </div>
           </div>
 
           {/* B. SENDER IDENTIFICATION */}
           <div className="p-6 md:p-8 border-b border-zinc-100">
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_SOURCE</h2>
-            <div className="p-4 relative overflow-visible border border-zinc-50">
-              <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
-              <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
+            <div className={`p-4 relative overflow-visible border border-zinc-50 ${status === "VALIDATED" ? "border-transparent" : ""}`}>
+              {status !== "VALIDATED" && (
+                <>
+                  <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
+                  <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
+                </>
+              )}
 
               <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
                 <div className="flex items-center gap-3">
                   <User size={14} className="text-zinc-400 shrink-0" />
-                  <span className="text-zinc-900 font-bold truncate">&gt; NAME: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">Arch. Knyght</span></span>
+                  <span className="text-zinc-900 font-bold truncate">&gt; OFFICE: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{txInfo?.studentName ?? "Awaiting Data..."}</span></span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">210605110078</span> // TYPE: <span className={docType === "Digital" ? "text-blue-600" : "text-amber-600"}>{docType.toUpperCase()}</span></span>
+                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{txInfo?.nim ?? "--------"}</span> // TYPE: <span className={docType === "Digital" ? "text-blue-600" : "text-amber-600"}>{docType.toUpperCase()}</span></span>
                 </div>
               </div>
             </div>
@@ -171,18 +203,26 @@ export default function AdminDocumentView() {
 
               <div className="relative z-10 space-y-4">
                 <div className="text-zinc-400 flex gap-3">
-                  <span className="shrink-0">[10:45:12]</span>
+                  <span className="shrink-0">[INIT]</span>
                   <span>SYSTEM: SESSION_ENCRYPTED_AND_INITIALIZED</span>
                 </div>
 
-                <div className="flex gap-3">
-                  <span className="text-zinc-900 font-bold shrink-0 opacity-50">&gt; [11:20:05]</span>
-                  <div className="flex flex-col">
-                    <span className="text-zinc-400 text-[9px] font-bold tracking-widest uppercase mb-1">Internal_System_Log</span>
-                    <span className="text-zinc-600 leading-relaxed">"Reviewing inbound transmission metadata... Integrity verified."</span>
+                {/* Real status logs from DB */}
+                {statusLogs.map((log) => (
+                  <div key={log.id} className="flex gap-3">
+                    <span className="text-zinc-900 font-bold shrink-0 opacity-50">&gt; [{new Date(log.changedAt).toLocaleTimeString()}]</span>
+                    <div className="flex flex-col">
+                      <span className="text-zinc-400 text-[9px] font-bold tracking-widest uppercase mb-1">
+                        {log.changedBy?.name ?? "System"} // {log.changedBy?.role ?? "SYS"}
+                      </span>
+                      <span className="text-zinc-600 leading-relaxed">
+                        {log.note ?? `${log.fromStatus ?? "NEW"} → ${log.toStatus}`}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ))}
 
+                {/* Admin feedback textarea */}
                 <div className="flex gap-2 text-zinc-900 group-focus-within/terminal:text-black transition-colors relative min-h-[4rem] items-start">
                   <span className="font-bold opacity-50 shrink-0 leading-relaxed">&gt;</span>
                   <div className="flex-1 font-mono text-[11px] text-zinc-700 leading-relaxed break-all relative">
@@ -200,12 +240,12 @@ export default function AdminDocumentView() {
           </div>
 
           {/* D. SIGNATURE DROPZONE (Conditional) */}
-          {adminStatus === "APPROVED" && docType === "Digital" && (
+          {status === "REVIEWING" && docType === "Digital" && (
             <div className="px-6 md:px-8 pb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="border-2 border-dashed border-zinc-300 p-6 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 group cursor-pointer hover:border-zinc-900 active:bg-zinc-100 transition-all text-zinc-400 hover:text-zinc-900 min-h-[100px]">
                 <Upload size={20} className="transition-colors" />
                 <p className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase text-center">
-                  [ LOAD_SIGNATURE_ASSET_HERE ]
+                  [ LOAD_OFFICIAL_SIGNATURE_HERE ]
                 </p>
               </div>
             </div>
@@ -213,47 +253,53 @@ export default function AdminDocumentView() {
 
           {/* E. DYNAMIC ACTION BUTTON */}
           <div className="p-6 md:p-8 bg-zinc-50/50 border-t border-zinc-100 space-y-4 mb-20 md:mb-0">
-            {/* ACTION_A: PRIMARY COMMAND */}
+            {/* ACTION_A: PRIMARY — dispatch revision */}
             <div className="relative group/btn-primary">
-              <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-200 transition-all group-hover/btn-primary:w-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
-              <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-200 transition-all group-hover/btn-primary:h-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
+              {status !== "VALIDATED" && (
+                <>
+                  <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-200 transition-all group-hover/btn-primary:w-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
+                  <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-200 transition-all group-hover/btn-primary:h-16 group-hover/btn-primary:bg-zinc-400 hidden md:block" />
+                </>
+              )}
 
-              <button
-                onClick={() => {
-                  if (adminStatus === "PENDING") setAdminStatus("REVISION_REQUIRED");
-                  else if (adminStatus === "REVISION_REQUIRED") setAdminStatus("APPROVED");
-                }}
-                className="w-full bg-white text-zinc-900 border border-zinc-200 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 active:text-white transition-all relative z-10 group shadow-sm"
-              >
-                {adminStatus === "REVISION_REQUIRED" ? (
-                  <>DISPATCH_REVISION_COMMAND <ArrowUpRight size={14} /></>
-                ) : adminStatus === "APPROVED" && docType === "Hybrid" ? (
-                  <>APPROVE_AND_CLOSE_TICKET ✓</>
-                ) : adminStatus === "APPROVED" && docType === "Digital" ? (
-                  <>SEAL_DOCUMENT_AND_TRANSMIT <ArrowUpRight size={14} /></>
-                ) : (
-                  <>INITIALIZE_COMMAND_SEQUENCE <ArrowUpRight size={14} /></>
-                )}
-              </button>
+              {status !== "VALIDATED" && (
+                <button
+                  disabled={saving || !txId}
+                  onClick={() => {
+                    if (status === "DRAFT") changeStatus("REVIEWING");
+                    else if (status === "REVIEWING") changeStatus("REVISION", feedback || undefined);
+                  }}
+                  className="w-full bg-white text-zinc-900 border border-zinc-200 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? "SAVING..." : status === "REVIEWING" ? (
+                    <>DISPATCH_REVISION_COMMAND <ArrowUpRight size={14} /></>
+                  ) : status === "REVISION" ? (
+                    <>AWAITING_STUDENT_REVISION ↩</>
+                  ) : (
+                    <>MARK_AS_REVIEWING <ArrowUpRight size={14} /></>
+                  )}
+                </button>
+              )}
             </div>
 
-            {/* ACTION_B: SECONDARY COMMAND */}
-            {adminStatus !== "APPROVED" && (
+            {/* ACTION_B: SECONDARY — validate & accept */}
+            {(status === "REVIEWING" || status === "REVISION") && (
               <div className="relative group/btn-secondary">
                 <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-100 transition-all group-hover/btn-secondary:w-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
                 <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-100 transition-all group-hover/btn-secondary:h-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
 
                 <button
-                  onClick={() => setAdminStatus("APPROVED")}
-                  className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm"
+                  disabled={saving || !txId}
+                  onClick={() => changeStatus("VALIDATED", feedback || undefined)}
+                  className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  VALIDATE_AND_ACCEPT_PAYLOAD ✓
+                  {saving ? "SAVING..." : "VALIDATE_AND_ACCEPT_PAYLOAD ✓"}
                 </button>
               </div>
             )}
 
             <div className="mt-5 p-3 border border-zinc-200 bg-white flex items-center gap-3 shadow-inner">
-              <div className={`w-1.5 h-1.5 rounded-none ${adminStatus === "APPROVED" ? "bg-emerald-500" : "bg-zinc-400"} animate-pulse`} />
+              <div className={`w-1.5 h-1.5 rounded-none ${status === "VALIDATED" ? "bg-emerald-500" : "bg-zinc-400"} animate-pulse`} />
               <p className="text-[9px] font-mono font-medium tracking-tight text-zinc-500 leading-tight">
                 AUTH_LVL: DESTINATION_ADMIN // SESSION_TOKEN: "SESSION_SYNC_ACTIVE"
               </p>

@@ -51,8 +51,8 @@ export default function TopNavbar({ user }: TopNavbarProps) {
     }, []);
 
     const isOnRiwayat = pathname.endsWith("/riwayat");
-    const dashboardHref = user.role === "admin" ? "/admin" : "/";
-    const riwayatHref = user.role === "admin" ? "/admin/riwayat" : "/riwayat";
+    const dashboardHref = user.role === "ADMIN" ? "/admin" : "/";
+    const riwayatHref = user.role === "ADMIN" ? "/admin/riwayat" : "/riwayat";
 
     const centerLink = isOnRiwayat
         ? { href: dashboardHref, label: "DASHBOARD", Icon: LayoutDashboard }

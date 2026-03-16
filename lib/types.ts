@@ -1,38 +1,60 @@
-export type DocumentStatus = "Baru" | "Diproses" | "Selesai";
+import { DocumentStatus as PrismaDocumentStatus, Role } from "@prisma/client";
 
-export interface Destination {
-    id: string;
-    categoryCode: string;
-    name: string;
-    faculty: string;
-    description: string;
-    documentCount: number;
-    status: "open" | "closed";
-    acceptedDocuments: string[];
-}
-
-export interface StudentDocument {
-    id: string;
-    destinationName: string;
-    documentType: string;
-    submittedAt: string;
-    status: DocumentStatus;
-    trackingId: string;
-}
-
-export interface AdminDocument {
-    id: string;
-    studentName: string;
-    nim: string;
-    documentType: string;
-    submittedAt: string;
-    status: DocumentStatus;
-    trackingId: string;
-}
+export type DocumentStatus = PrismaDocumentStatus;
 
 export interface UserProfile {
-    name: string;
-    nim: string;
-    role: "mahasiswa" | "admin";
-    institution?: string;
+  id: string;
+  autoId: number;
+  nim: string;
+  name: string;
+  role: Role;
+  destinationName?: string | null;
+  categoryCode?: string | null;
+  acceptedDocuments?: string[];
+  isOpen?: boolean | null;
+}
+
+export interface Transaction {
+  id: string;
+  documentType: string; // decrypted at app layer for involved users
+  status: DocumentStatus;
+  createdAt: Date;
+  completedAt?: Date | null;
+  studentId: string;
+  adminId: string;
+  
+  // Optional relations
+  student?: UserProfile;
+  admin?: UserProfile;
+  files?: TransactionFile[];
+  messages?: Message[];
+  statusLogs?: StatusLog[];
+}
+
+export interface TransactionFile {
+  id: string;
+  transactionId: string;
+  fileUrl: string;
+  originalFileName: string; // decrypted at app layer
+  uploadedById: string;
+  uploadedAt: Date;
+}
+
+export interface Message {
+  id: string;
+  transactionId: string;
+  senderId: string;
+  senderRole: Role;
+  content: string;
+  createdAt: Date;
+}
+
+export interface StatusLog {
+  id: string;
+  transactionId: string;
+  changedById: string;
+  fromStatus: DocumentStatus | null;
+  toStatus: DocumentStatus;
+  note: string | null;
+  changedAt: Date;
 }
