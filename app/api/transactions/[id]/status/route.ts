@@ -41,14 +41,26 @@ export async function PATCH(
       data: {
         status: toStatus,
         // Mark completedAt when validated
-        ...(toStatus === DocumentStatus.VALIDATED && { completedAt: new Date() }),
-        // Create file attachment if provided
+        ...(toStatus === "VALIDATED" && { completedAt: new Date() }),
+        // Link to the processed, signed PDF
+        finalFileUrl: body.finalFileUrl || undefined,
+        // Create file attachment if provided (regular student upload)
         ...(file && {
           files: {
             create: {
               fileUrl: file.url,
               originalFileName: file.name,
               uploadedById: changedById
+            }
+          }
+        }),
+        // ADDED: Create official signed file record if finalFileUrl is present
+        ...(body.finalFileUrl && {
+          files: {
+            create: {
+              fileUrl: body.finalFileUrl,
+              originalFileName: "OFFICIAL_SIGNED_DOCUMENT.pdf",
+              uploadedById: changedById // Admin ID
             }
           }
         })

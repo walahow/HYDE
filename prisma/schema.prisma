@@ -55,6 +55,7 @@ model Transaction {
   status       DocumentStatus @default(DRAFT)
   createdAt    DateTime       @default(now())
   completedAt  DateTime? // set when status → VALIDATED
+  finalFileUrl String?   // URL to the processed, signed PDF
 
   studentId String @db.ObjectId
   student   User   @relation("StudentTxns", fields: [studentId], references: [id])

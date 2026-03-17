@@ -15,10 +15,25 @@ import {
   Info,
   Search,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import type { DocumentStatus } from "@/lib/types";
+import { bakeSignatureIntoPdf } from "@/lib/pdf-utils";
+import dynamic from "next/dynamic";
+
+const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-zinc-50 font-mono text-[10px] text-zinc-400">
+      LOADING_CANVAS_ENGINE...
+    </div>
+  ),
+});
 
 type DocType = "Digital" | "Hybrid";
 
@@ -31,10 +46,13 @@ export default function AdminDocumentView() {
 
   const [docType, setDocType] = useState<DocType>("Digital");
   const [status, setStatus] = useState<DocumentStatus>("DRAFT");
-  const [selectedFile, setSelectedFile] = useState("PAYLOAD_01.PDF");
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [sigPosition, setSigPosition] = useState<{ x: number; y: number; scale: number; sigWidthPct?: number } | null>(null);
+  const [currPage, setCurrPage] = useState(1);
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
-  const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string } | null>(null);
+  const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string; files?: any[]; finalFileUrl?: string | null } | null>(null);
   const [statusLogs, setStatusLogs] = useState<Array<{
     id: string;
     changedAt: string;
@@ -51,12 +69,83 @@ export default function AdminDocumentView() {
     VALIDATED: "VALIDATED",
   };
 
+  const files = txInfo?.files || [];
+  const activeFile = files[selectedFileIndex];
+
   async function refreshLogs() {
     if (!txId) return;
     const res = await fetch(`/api/transactions/${txId}`);
     if (!res.ok) return;
     const data = await res.json();
+    setTxInfo(data);
     setStatusLogs(data.statusLogs ?? []);
+
+    // Auto-select the signed file if it was just created
+    if (data.files) {
+      const signedIdx = data.files.findIndex((f: any) => f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf");
+      if (signedIdx !== -1) setSelectedFileIndex(signedIdx);
+    }
+  }
+
+  async function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (1MB) and type
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      return alert("Only .png, .jpg, or .jpeg files are allowed for signatures.");
+    }
+    if (file.size > 1024 * 1024) return alert("Signature too large (Max 1MB)");
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSignature(event.target?.result as string);
+      setSigPosition({ x: 50, y: 80, scale: 1.0 });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function confirmValidation() {
+    if (!txId || !activeFile || !signature || !sigPosition) {
+      return alert("Please place a signature before validating.");
+    }
+
+    setSaving(true);
+    try {
+      // 1. Bake signature into PDF
+      const signedPdfBlob = await bakeSignatureIntoPdf(activeFile.fileUrl, signature, sigPosition, currPage - 1);
+      const signedFile = new File([signedPdfBlob], `SIGNED_${activeFile.originalFileName}`, { type: "application/pdf" });
+
+      // 2. Upload signed PDF to Vercel Blob
+      const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(`SIGNED_${activeFile.originalFileName}`)}`, {
+        method: "POST",
+        body: signedFile,
+      });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const uploadData = await uploadRes.json();
+
+      // 3. Update Status and link finalFileUrl
+      await fetch(`/api/transactions/${txId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          toStatus: "VALIDATED", 
+          changedById: ADMIN_ID, 
+          note: feedback || "Admin signed and validated the document",
+          finalFileUrl: uploadData.url
+        }),
+      });
+
+      setStatus("VALIDATED");
+      setFeedback("");
+      await refreshLogs();
+    } catch (err) {
+      console.error("Validation error:", err);
+      alert("Validation failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   // On mount: fetch real status, then auto-transition DRAFT → REVIEWING
@@ -72,6 +161,7 @@ export default function AdminDocumentView() {
         studentName: data.student?.name,
         nim: data.student?.nim,
         documentType: data.documentType,
+        files: data.files,
       });
       // Auto-set REVIEWING when admin opens a DRAFT transaction
       if (data.status === "DRAFT") {
@@ -122,15 +212,32 @@ export default function AdminDocumentView() {
                 <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK</span>
               </Link>
-              <span className="text-zinc-300 hidden md:inline ml-1">|</span>
-              <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
-                <span className="font-bold truncate">📂 FILE_ID: {selectedFile}</span>
-                <ChevronDown size={12} className="text-zinc-400 shrink-0" />
-              </button>
+              <div className="relative group/files">
+                <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
+                  <span className="font-bold truncate">
+                    📂 FILE_ID: {activeFile?.originalFileName || "LOADING..."}
+                  </span>
+                  <ChevronDown size={12} className="text-zinc-400 shrink-0" />
+                </button>
+                {files.length > 1 && (
+                  <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
+                    {files.map((file: any, idx: number) => (
+                      <button
+                        key={file.id}
+                        onClick={() => setSelectedFileIndex(idx)}
+                        className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
+                      >
+                        <span className="truncate">📂 {file.originalFileName}</span>
+                        {selectedFileIndex === idx && <span className="text-[8px] bg-zinc-900 text-white px-1">ACTIVE</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* STATUS PIPELINE */}
-            <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2">
+            <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2 text-zinc-900/40">
               {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s, i, arr) => (
                 <React.Fragment key={s}>
                   <span className={`px-1.5 py-0.5 transition-all border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
@@ -142,18 +249,15 @@ export default function AdminDocumentView() {
             </div>
           </div>
 
-          <div className="flex-1 p-4 md:p-8 overflow-auto bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
-            {/* Document Content Container */}
-            <div className="w-full h-full max-w-4xl mx-auto bg-white border border-zinc-200 flex flex-col items-center justify-center p-6 md:p-12 transition-all relative overflow-hidden shadow-sm">
-              <FileText size={48} className="text-zinc-100 mb-6" />
-              <div className="text-center font-mono relative z-10 px-4">
-                <p className="text-xs font-bold tracking-[0.2em] text-zinc-800 mb-2">SCANNING_INBOUND_TRANSMISSION</p>
-                <p className="text-[9px] text-zinc-400 uppercase tracking-[0.2em] md:tracking-[0.3em] leading-relaxed">Integrity check in progress... Source: Student_Node_77B</p>
-              </div>
-              <div className="absolute inset-x-0 h-px bg-zinc-900/5 animate-[scan_4s_linear_infinite]" />
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-            </div>
+          <div className="flex-1 overflow-hidden bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
+            <DocumentCanvas 
+              fileUrl={activeFile?.fileUrl || null}
+              isViewOnly={status !== "REVIEWING" || activeFile?.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf"}
+              appliedSignature={activeFile?.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" ? null : signature}
+              onSignatureMove={setSigPosition}
+              signaturePosition={sigPosition}
+              onPageChange={setCurrPage}
+            />
           </div>
         </div>
 
@@ -242,12 +346,18 @@ export default function AdminDocumentView() {
           {/* D. SIGNATURE DROPZONE (Conditional) */}
           {status === "REVIEWING" && docType === "Digital" && (
             <div className="px-6 md:px-8 pb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="border-2 border-dashed border-zinc-300 p-6 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 group cursor-pointer hover:border-zinc-900 active:bg-zinc-100 transition-all text-zinc-400 hover:text-zinc-900 min-h-[100px]">
+              <label className="border-2 border-dashed border-zinc-300 p-6 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 group cursor-pointer hover:border-zinc-900 active:bg-zinc-100 transition-all text-zinc-400 hover:text-zinc-900 min-h-[100px]">
                 <Upload size={20} className="transition-colors" />
                 <p className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase text-center">
-                  [ LOAD_OFFICIAL_SIGNATURE_HERE ]
+                  {signature ? "[ SIGNATURE_LOADED ]" : "[ LOAD_OFFICIAL_SIGNATURE_HERE ]"}
                 </p>
-              </div>
+                <input 
+                  type="file" 
+                  accept=".png,.jpg,.jpeg,image/png,image/jpeg" 
+                  className="hidden" 
+                  onChange={handleSignatureUpload}
+                />
+              </label>
             </div>
           )}
 
@@ -289,12 +399,26 @@ export default function AdminDocumentView() {
                 <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-100 transition-all group-hover/btn-secondary:h-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
 
                 <button
-                  disabled={saving || !txId}
-                  onClick={() => changeStatus("VALIDATED", feedback || undefined)}
+                  disabled={saving || !txId || (status === "REVIEWING" && !signature)}
+                  onClick={confirmValidation}
                   className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? "SAVING..." : "VALIDATE_AND_ACCEPT_PAYLOAD ✓"}
                 </button>
+              </div>
+            )}
+
+            {/* ACTION_C: DOWNLOAD OFFICIAL (VALIDATED ONLY) */}
+            {status === "VALIDATED" && txInfo?.finalFileUrl && (
+              <div className="relative group/btn-download">
+                <a 
+                  href={`/api/blob/proxy?url=${encodeURIComponent(txInfo.finalFileUrl)}&filename=${encodeURIComponent(`OFFICIAL_SIGNED_${txId?.slice(-6)}.pdf`)}`} 
+                  download 
+                  className="w-full bg-emerald-600 text-white border border-emerald-500 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
+                >
+                  <Download size={14} className="group-hover/dl:translate-y-0.5 transition-transform" />
+                  DOWNLOAD_OFFICIAL_SIGNED_PDF ✓
+                </a>
               </div>
             )}
 

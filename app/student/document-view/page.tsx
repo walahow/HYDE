@@ -14,9 +14,22 @@ import {
   AlertCircle,
   User,
   Fingerprint,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import Link from "next/link";
 import type { DocumentStatus } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-zinc-50 font-mono text-[10px] text-zinc-400">
+      LOADING_CANVAS_ENGINE...
+    </div>
+  ),
+});
 
 const STUDENT_ID = "69b6cd888d2d340d5984ce5f";
 
@@ -36,6 +49,7 @@ interface TransactionDetail {
   createdAt: string;
   admin?: { id: string; name: string; destinationName?: string | null; categoryCode?: string | null };
   files?: { id: string; fileUrl: string; originalFileName: string }[];
+  finalFileUrl?: string | null;
   statusLogs?: StatusLog[];
 }
 
@@ -113,6 +127,8 @@ export default function StudentDocumentView() {
   }, [txId]);
 
   const status = transaction?.status ?? null;
+
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
   const pipelineLabels: Record<DocumentStatus, string> = {
     DRAFT: "DRAFT",
@@ -347,11 +363,28 @@ export default function StudentDocumentView() {
                 <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK_TO_RIWAYAT</span>
               </Link>
-              <span className="text-zinc-300 hidden md:inline ml-1">|</span>
-              <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
-                <span className="font-bold truncate">📂 {transaction.documentType.toUpperCase()}</span>
-                <ChevronDown size={12} className="text-zinc-400 shrink-0" />
-              </button>
+              <div className="relative group/files">
+                <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
+                  <span className="font-bold truncate">
+                    📂 FILE_ID: {transaction?.files?.[selectedFileIndex]?.originalFileName || "LOADING..."}
+                  </span>
+                  <ChevronDown size={12} className="text-zinc-400 shrink-0" />
+                </button>
+                {transaction?.files && transaction.files.length > 1 && (
+                  <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
+                    {transaction.files.map((file, idx) => (
+                      <button
+                        key={file.id}
+                        onClick={() => setSelectedFileIndex(idx)}
+                        className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
+                      >
+                        <span className="truncate">📂 {file.originalFileName}</span>
+                        {selectedFileIndex === idx && <span className="text-[8px] bg-zinc-900 text-white px-1">ACTIVE</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* STATUS PIPELINE */}
@@ -368,25 +401,12 @@ export default function StudentDocumentView() {
           </div>
 
           {/* Preview Area */}
-          <div className="flex-1 p-4 md:p-8 overflow-auto bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
-            <div className="absolute top-6 md:top-10 left-4 md:left-7 w-12 h-px bg-zinc-300 z-10" />
-            <div className="absolute top-4 md:top-7 left-6 md:left-10 w-px h-12 bg-zinc-300 z-10" />
-            <div className="absolute top-7 md:top-11 right-6 md:right-9 w-8 h-px bg-zinc-300 z-10" />
-            <div className="absolute top-5 md:top-9 right-8 md:right-11 w-px h-8 bg-zinc-300 z-10" />
-            <div className="absolute bottom-7 md:bottom-11 left-6 md:left-9 w-8 h-px bg-zinc-300 z-10" />
-            <div className="absolute bottom-5 md:bottom-9 left-8 md:left-11 w-px h-8 bg-zinc-300 z-10" />
-            <div className="absolute bottom-6 md:bottom-10 right-4 md:right-7 w-12 h-px bg-zinc-300 z-10" />
-            <div className="absolute bottom-4 md:bottom-7 right-6 md:right-10 w-px h-12 bg-zinc-300 z-10" />
-
-            <div className="w-full h-full max-w-4xl mx-auto bg-white border border-zinc-200 flex flex-col items-center justify-center p-6 md:p-12 transition-all relative overflow-hidden shadow-sm">
-              <FileText size={48} className="text-zinc-200 mb-6" />
-              <div className="text-center font-mono relative z-10 px-4">
-                <p className="text-xs font-bold tracking-[0.2em] text-zinc-800 mb-2">PREVIEW_STREAM_WAITING</p>
-                <p className="text-[9px] text-zinc-400 uppercase tracking-[0.2em] md:tracking-[0.3em] leading-relaxed">Establishing secure connection to repository...</p>
-              </div>
-              <div className="absolute inset-x-0 h-px bg-zinc-900/5 animate-[scan_4s_linear_infinite]" />
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-            </div>
+          <div className="flex-1 overflow-hidden bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
+            <DocumentCanvas 
+              fileUrl={transaction?.files?.[selectedFileIndex]?.fileUrl || null}
+              isViewOnly={true}
+              signaturePosition={null} 
+            />
           </div>
         </div>
 
@@ -541,13 +561,17 @@ export default function StudentDocumentView() {
                 <div className="relative group/btn">
                   <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                   <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
-                  {docType === "Digital" ? (
-                    <button className="w-full bg-zinc-900 text-white border border-zinc-800 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-white hover:text-zinc-900 hover:border-zinc-200 transition-all relative z-10">
-                      <Download size={16} className="opacity-70" /> [ DOWNLOAD_SECURE_PAYLOAD ]
-                    </button>
+                  {transaction?.finalFileUrl ? (
+                    <a 
+                      href={`/api/blob/proxy?url=${encodeURIComponent(transaction.finalFileUrl)}&filename=${encodeURIComponent(`OFFICIAL_SIGNED_${transaction.id.slice(-6)}.pdf`)}`} 
+                      download 
+                      className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 hover:text-white transition-all relative z-10 group"
+                    >
+                      <Download size={16} className="group-hover:translate-y-0.5 transition-transform" /> [ DOWNLOAD_OFFICIAL_SIGNED_PDF ]
+                    </a>
                   ) : (
-                    <button className="w-full bg-zinc-900 text-white border border-zinc-800 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-white hover:text-zinc-900 hover:border-zinc-200 transition-all relative z-10">
-                      <Printer size={16} className="opacity-70" /> [ PRINT_DISPOSITION_REPORT ]
+                    <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
+                      <Loader2 size={16} className="animate-spin" /> [ PROCESSING_SIGNED_PAYLOAD ]
                     </button>
                   )}
                 </div>
