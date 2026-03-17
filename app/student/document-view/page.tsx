@@ -65,6 +65,7 @@ export default function StudentDocumentView() {
   const [transaction, setTransaction] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [studentReply, setStudentReply] = useState("");
+  const [isManifestOpen, setIsManifestOpen] = useState(false);
 
   // New submission state (when no txId, comes from dashboard)
   const [documentType, setDocumentType] = useState("");
@@ -121,6 +122,18 @@ export default function StudentDocumentView() {
       if (!res.ok) { setLoading(false); return; }
       const data: TransactionDetail = await res.json();
       setTransaction(data);
+      
+      // Auto-select the signed file if it exists (VALIDATED state)
+      if (data.status === "VALIDATED" && data.files) {
+        const signedIdx = data.files.findIndex((f: any) => 
+          f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" || 
+          f.fileUrl === data.finalFileUrl
+        );
+        if (signedIdx !== -1) {
+          setSelectedFileIndex(signedIdx);
+        }
+      }
+      
       setLoading(false);
     }
     fetchTransaction();
@@ -233,6 +246,27 @@ export default function StudentDocumentView() {
                 <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK_TO_DASHBOARD</span>
               </Link>
+              <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_DESTINATION</h2>
+              <div className="p-4 relative z-0 border border-zinc-50">
+                <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
+                <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+                <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
+                <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
+                
+                <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
+                  <div className="flex items-center gap-3">
+                    <User size={14} className="text-zinc-400 shrink-0" />
+                    <span className="text-zinc-900 font-bold truncate">&gt; NAME: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{adminInfo?.name ?? "Loading..."}</span></span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Fingerprint size={14} className="text-zinc-400 shrink-0" />
+                    <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className="text-blue-600">DIGITAL</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8 border-b border-zinc-100">
               <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4">// NEW_TRANSMISSION_INIT</h2>
               <div className="space-y-4">
                 <div>
@@ -303,26 +337,6 @@ export default function StudentDocumentView() {
                 </button>
               </div>
             </div>
-
-            {/* Destination info (Harmonized) */}
-            <div className="p-6 md:p-8 border-b border-zinc-100">
-              <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_DESTINATION</h2>
-              <div className="p-4 relative overflow-visible border border-zinc-50">
-                <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
-                <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
-                
-                <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
-                  <div className="flex items-center gap-3">
-                    <User size={14} className="text-zinc-400 shrink-0" />
-                    <span className="text-zinc-900 font-bold truncate">&gt; NAME: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{adminInfo?.name ?? "Loading..."}</span></span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                    <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className="text-blue-600">DIGITAL</span></span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -356,33 +370,61 @@ export default function StudentDocumentView() {
 
       <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden relative z-10 w-full shadow-2xl">
         {/* LEFT: DOCUMENT VIEWPORT */}
-        <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white min-w-0">
-          <div className="h-14 border-b border-zinc-200 flex items-center px-4 md:px-6 justify-between bg-zinc-50/50">
-            <div className="flex items-center gap-4 md:gap-6 font-mono text-[9px] md:text-[10px] font-medium tracking-tight overflow-hidden">
+        <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-zinc-200 bg-white min-w-0 overflow-visible">
+          <div className="h-14 border-b border-zinc-200 flex items-center px-4 md:px-6 justify-between bg-zinc-50/50 overflow-visible relative z-[60]">
+            <div className="flex items-center gap-4 md:gap-6 font-mono text-[9px] md:text-[10px] font-medium tracking-tight overflow-visible">
               <Link href="/riwayat" className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 transition-colors py-1 group/back">
                 <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK_TO_RIWAYAT</span>
               </Link>
-              <div className="relative group/files">
-                <button className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0">
+              <div className="relative">
+                <button 
+                  onClick={() => setIsManifestOpen(!isManifestOpen)}
+                  className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0"
+                >
                   <span className="font-bold truncate">
                     📂 FILE_ID: {transaction?.files?.[selectedFileIndex]?.originalFileName || "LOADING..."}
                   </span>
-                  <ChevronDown size={12} className="text-zinc-400 shrink-0" />
+                  <ChevronDown size={12} className={`text-zinc-400 shrink-0 transition-transform duration-200 ${isManifestOpen ? "rotate-180" : ""}`} />
                 </button>
-                {transaction?.files && transaction.files.length > 1 && (
-                  <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50">
-                    {transaction.files.map((file, idx) => (
-                      <button
-                        key={file.id}
-                        onClick={() => setSelectedFileIndex(idx)}
-                        className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
-                      >
-                        <span className="truncate">📂 {file.originalFileName}</span>
-                        {selectedFileIndex === idx && <span className="text-[8px] bg-zinc-900 text-white px-1">ACTIVE</span>}
-                      </button>
-                    ))}
-                  </div>
+                
+                {isManifestOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsManifestOpen(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-zinc-200 shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-50">
+                      <div className="p-3 border-b border-zinc-100 bg-zinc-50/50">
+                        <span className="text-[8px] font-mono font-bold text-zinc-400 tracking-widest uppercase">Document Manifest Navigator</span>
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        {transaction?.files?.map((file, idx) => {
+                          const isSigned = file.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf";
+                          return (
+                            <button
+                              key={file.id}
+                              onClick={() => {
+                                setSelectedFileIndex(idx);
+                                setIsManifestOpen(false);
+                              }}
+                              className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
+                            >
+                              <div className="flex flex-col gap-0.5 truncate bg-transparent">
+                                <span className={`truncate ${isSigned ? "text-emerald-600" : ""}`}>
+                                  {isSigned ? "✓ OFFICIAL_SIGNED" : `📂 PAYLOAD_0${idx + 1}`}
+                                </span>
+                                <span className="text-[8px] text-zinc-400 truncate opacity-70">
+                                  {file.originalFileName}
+                                </span>
+                              </div>
+                              {selectedFileIndex === idx && <span className="text-[7px] bg-zinc-900 text-white px-1 leading-4">ACTIVE</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -406,6 +448,7 @@ export default function StudentDocumentView() {
               fileUrl={transaction?.files?.[selectedFileIndex]?.fileUrl || null}
               isViewOnly={true}
               signaturePosition={null} 
+              appliedSignature={null}
             />
           </div>
         </div>
@@ -424,9 +467,11 @@ export default function StudentDocumentView() {
           {/* Destination info */}
           <div className="p-6 md:p-8 border-b border-zinc-100">
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_DESTINATION</h2>
-            <div className="p-4 relative overflow-visible border border-zinc-50">
-              <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-900" />
-              <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-900" />
+            <div className="p-4 relative z-0 border border-zinc-50">
+              <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
+              <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+              <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
+              <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
               
               <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
                 <div className="flex items-center gap-3">
@@ -446,7 +491,7 @@ export default function StudentDocumentView() {
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase inline-flex items-center gap-2">
               <History size={12} className="text-zinc-300" /> SYSTEM_FEEDBACK_MANIFEST
             </h2>
-            <div className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto flex flex-col gap-4 relative group/terminal">
+            <div className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto flex flex-col gap-4 relative group/terminal z-0">
               <div className="absolute inset-0 pointer-events-none opacity-[0.10] mask-bayer-fade" />
               <div className="relative z-10 space-y-4">
                 <div className="text-zinc-400 flex gap-3">
@@ -558,16 +603,22 @@ export default function StudentDocumentView() {
               </div>
             ) : status === "VALIDATED" ? (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <div className="relative group/btn">
-                  <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
-                  <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                <div className="relative group/btn-download">
+                  {/* Top-Left Long Overflow */}
+                  <div className="absolute -top-2 -left-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                  <div className="absolute -top-4 -left-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                  
+                  {/* Bottom-Right Long Overflow */}
+                  <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                  <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+
                   {transaction?.finalFileUrl ? (
                     <a 
                       href={`/api/blob/proxy?url=${encodeURIComponent(transaction.finalFileUrl)}&filename=${encodeURIComponent(`OFFICIAL_SIGNED_${transaction.id.slice(-6)}.pdf`)}`} 
                       download 
-                      className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 hover:text-white transition-all relative z-10 group"
+                      className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
                     >
-                      <Download size={16} className="group-hover:translate-y-0.5 transition-transform" /> [ DOWNLOAD_OFFICIAL_SIGNED_PDF ]
+                      <Download size={16} className="group-hover:translate-y-0.5 transition-transform" /> [ DOWNLOAD_OFFICIAL_SIGNED_PDF ] ✓
                     </a>
                   ) : (
                     <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
