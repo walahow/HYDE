@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { FileText, Fingerprint } from "lucide-react";
 import TopNavbar from "@/components/ui/TopNavbar";
 import DestinationCard from "@/components/ui/DestinationCard";
-import type { UserProfile } from "@/lib/types";
+import { useSession } from "next-auth/react";
 import Lenis from "lenis";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 
@@ -17,17 +17,11 @@ interface Destination {
   isOpen: boolean | null;
 }
 
-const STUDENT_ID = "69b6cd888d2d340d5984ce5f";
-
-const currentUser: UserProfile = {
-  id: STUDENT_ID,
-  autoId: 201,
-  name: "Ahmad Fauzan",
-  nim: "H1101221001",
-  role: "STUDENT",
-};
+// Session-based user data will be used
 
 export default function DashboardMahasiswaPage() {
+  const { data: session } = useSession();
+  const user = session?.user;
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -111,7 +105,7 @@ export default function DashboardMahasiswaPage() {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <div className="shrink-0">
-          <TopNavbar user={currentUser} />
+          <TopNavbar />
         </div>
 
         <div className="mx-auto w-full max-w-5xl xl:max-w-7xl px-4 md:px-6 pt-6 md:pt-10 pb-2 shrink-0 transition-all duration-500">

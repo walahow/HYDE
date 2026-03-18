@@ -77,6 +77,7 @@ export default function StudentDocumentView() {
   const [transmitting, setTransmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -123,14 +124,19 @@ export default function StudentDocumentView() {
       const data: TransactionDetail = await res.json();
       setTransaction(data);
       
-      // Auto-select the signed file if it exists (VALIDATED state)
-      if (data.status === "VALIDATED" && data.files) {
-        const signedIdx = data.files.findIndex((f: any) => 
-          f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" || 
-          f.fileUrl === data.finalFileUrl
-        );
-        if (signedIdx !== -1) {
-          setSelectedFileIndex(signedIdx);
+      if (data.files && data.files.length > 0) {
+        // Default to the latest payload
+        setSelectedFileIndex(data.files.length - 1);
+
+        // Auto-select the signed file if it exists (VALIDATED state)
+        if (data.status === "VALIDATED") {
+          const signedIdx = data.files.findIndex((f: any) => 
+            f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" || 
+            f.fileUrl === data.finalFileUrl
+          );
+          if (signedIdx !== -1) {
+            setSelectedFileIndex(signedIdx);
+          }
         }
       }
       
@@ -150,8 +156,11 @@ export default function StudentDocumentView() {
     VALIDATED: "VALIDATED",
   };
 
-  async function uploadFile(file: File) {
-    const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+  async function uploadFile(file: File, txId?: string) {
+    let url = `/api/upload?filename=${encodeURIComponent(file.name)}`;
+    if (txId) url += `&transactionId=${txId}`;
+    
+    const res = await fetch(url, {
       method: "POST",
       body: file,
     });
@@ -192,15 +201,17 @@ export default function StudentDocumentView() {
       setSubmitting(false);
     }
   }
-
   async function transmitRevision() {
-    if (!txId || !attachedFile) return;
+    if (!txId || (!attachedFile && !studentReply.trim())) return;
     setTransmitting(true);
     try {
-      // 1. Upload to Vercel Blob
-      const fileData = await uploadFile(attachedFile);
+      let fileData = null;
+      if (attachedFile) {
+        // 1. Upload to Vercel Blob and link immediately
+        fileData = await uploadFile(attachedFile, txId);
+      }
 
-      // 2. Update Status and link file
+      // 2. Update Status and link file (only if fileData exists)
       await fetch(`/api/transactions/${txId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -208,7 +219,7 @@ export default function StudentDocumentView() {
           toStatus: "REVIEWING",
           changedById: STUDENT_ID,
           note: studentReply.trim() || "Student re-submitted revised documents",
-          file: fileData
+          ...(fileData && { file: fileData })
         }),
       });
       // Refresh transaction to get updated logs
@@ -447,8 +458,6 @@ export default function StudentDocumentView() {
             <DocumentCanvas 
               fileUrl={transaction?.files?.[selectedFileIndex]?.fileUrl || null}
               isViewOnly={true}
-              signaturePosition={null} 
-              appliedSignature={null}
             />
           </div>
         </div>
@@ -491,7 +500,10 @@ export default function StudentDocumentView() {
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase inline-flex items-center gap-2">
               <History size={12} className="text-zinc-300" /> SYSTEM_FEEDBACK_MANIFEST
             </h2>
-            <div className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto flex flex-col gap-4 relative group/terminal z-0">
+            <div 
+              onClick={() => textareaRef.current?.focus()}
+              className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto flex flex-col gap-4 relative group/terminal z-0 cursor-text"
+            >
               <div className="absolute inset-0 pointer-events-none opacity-[0.10] mask-bayer-fade" />
               <div className="relative z-10 space-y-4">
                 <div className="text-zinc-400 flex gap-3">
@@ -529,6 +541,7 @@ export default function StudentDocumentView() {
                       {studentReply}
                       <span className="inline-block w-2 h-0.5 bg-zinc-900 animate-terminal-blink ml-1 align-middle" />
                       <textarea
+                        ref={textareaRef}
                         value={studentReply}
                         onChange={(e) => setStudentReply(e.target.value)}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-text resize-none focus:outline-none"
@@ -593,7 +606,7 @@ export default function StudentDocumentView() {
                   <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                   <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                   <button
-                    disabled={transmitting}
+                    disabled={transmitting || (!attachedFile && !studentReply.trim())}
                     onClick={transmitRevision}
                     className="w-full bg-white text-zinc-900 border border-zinc-200 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 transition-all relative z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -604,27 +617,61 @@ export default function StudentDocumentView() {
             ) : status === "VALIDATED" ? (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <div className="relative group/btn-download">
-                  {/* Top-Left Long Overflow */}
                   <div className="absolute -top-2 -left-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
                   <div className="absolute -top-4 -left-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
-                  
-                  {/* Bottom-Right Long Overflow */}
                   <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
                   <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
 
-                  {transaction?.finalFileUrl ? (
-                    <a 
-                      href={`/api/blob/proxy?url=${encodeURIComponent(transaction.finalFileUrl)}&filename=${encodeURIComponent(`OFFICIAL_SIGNED_${transaction.id.slice(-6)}.pdf`)}`} 
-                      download 
-                      className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
-                    >
-                      <Download size={16} className="group-hover:translate-y-0.5 transition-transform" /> [ DOWNLOAD_OFFICIAL_SIGNED_PDF ] ✓
-                    </a>
-                  ) : (
-                    <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
-                      <Loader2 size={16} className="animate-spin" /> [ PROCESSING_SIGNED_PAYLOAD ]
-                    </button>
-                  )}
+                  {(() => {
+                    const signedFiles = (transaction?.files ?? []).filter(
+                      (f: any) => f.originalFileName?.startsWith("OFFICIAL_SIGNED")
+                    );
+                    const txShort = transaction?.id?.slice(-6) ?? "doc";
+
+                    if (signedFiles.length === 0) {
+                      return (
+                        <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
+                          <Loader2 size={16} className="animate-spin" /> [ PROCESSING_SIGNED_PAYLOAD ]
+                        </button>
+                      );
+                    }
+
+                    const handleDownload = async () => {
+                      if (signedFiles.length === 1) {
+                        const a = document.createElement("a");
+                        a.href = `/api/blob/proxy?url=${encodeURIComponent(signedFiles[0].fileUrl)}&filename=${encodeURIComponent(signedFiles[0].originalFileName)}`;
+                        a.download = signedFiles[0].originalFileName;
+                        a.click();
+                      } else {
+                        const JSZip = (await import("jszip")).default;
+                        const zip = new JSZip();
+                        // Fetch all files in parallel
+                        await Promise.all(signedFiles.map(async (file: any) => {
+                          const res = await fetch(`/api/blob/proxy?url=${encodeURIComponent(file.fileUrl)}`);
+                          const buf = await res.arrayBuffer();
+                          zip.file(file.originalFileName, buf);
+                        }));
+                        const zipBlob = await zip.generateAsync({ type: "blob" });
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(zipBlob);
+                        a.download = `OFFICIAL_SIGNED_${txShort}.zip`;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+                      }
+                    };
+
+                    return (
+                      <button
+                        onClick={handleDownload}
+                        className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
+                      >
+                        <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                        {signedFiles.length > 1
+                          ? `[ DOWNLOAD_ALL_SIGNED_ZIP (${signedFiles.length} FILES) ] ✓`
+                          : "[ DOWNLOAD_OFFICIAL_SIGNED_PDF ] ✓"}
+                      </button>
+                    );
+                  })()}
                 </div>
                 <div className="mt-5 p-4 border border-zinc-200 bg-zinc-50/50 flex items-center gap-3 shadow-inner">
                   <div className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse" />

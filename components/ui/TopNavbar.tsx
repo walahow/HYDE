@@ -5,13 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Power, Building2, LayoutDashboard, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { UserProfile } from "@/lib/types";
+import { useSession, signOut } from "next-auth/react";
 
-interface TopNavbarProps {
-    user: UserProfile;
-}
-
-export default function TopNavbar({ user }: TopNavbarProps) {
+export default function TopNavbar() {
+    const { data: session } = useSession();
+    const user = session?.user;
     const [open, setOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +49,8 @@ export default function TopNavbar({ user }: TopNavbarProps) {
     }, []);
 
     const isOnRiwayat = pathname.endsWith("/riwayat");
+    if (!user) return null;
+
     const dashboardHref = user.role === "ADMIN" ? "/admin" : "/";
     const riwayatHref = user.role === "ADMIN" ? "/admin/riwayat" : "/riwayat";
 
@@ -161,7 +161,7 @@ function ProfileDropdown({ user, open, setOpen, dropdownRef, handleMouseEnter, h
 
                         {/* Logout */}
                         <button
-                            onClick={() => setOpen(false)}
+                            onClick={() => signOut({ callbackUrl: "/login" })}
                             className="flex w-full items-center justify-start gap-2.5 rounded-none px-3 py-3 md:py-2 text-sm font-mono font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white"
                         >
                             <div className="flex items-center gap-2">

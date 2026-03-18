@@ -7,23 +7,17 @@ import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
 import HoverCard from "@/components/ui/HoverCard";
 import AdminStatusBadge from "@/components/ui/AdminStatusBadge";
-import type { UserProfile, Transaction } from "@/lib/types";
-import type { DocumentStatus } from "@/lib/types";
+import { useSession } from "next-auth/react";
+import type { Transaction, DocumentStatus } from "@/lib/types";
 
-const ADMIN_ID = "69b6cd888d2d340d5984ce5c";
-
-const currentUser: UserProfile = {
-    id: ADMIN_ID,
-    autoId: 101,
-    name: "Admin LPPM",
-    nim: "ADM-001",
-    role: "ADMIN",
-};
+// Session-based user data will be used
 
 // Admin history shows REVISION and VALIDATED transactions
 const HISTORY_STATUSES: DocumentStatus[] = ["REVISION", "VALIDATED"];
 
 export default function AdminHistoryPage() {
+    const { data: session } = useSession();
+    const user = session?.user;
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
@@ -42,11 +36,16 @@ export default function AdminHistoryPage() {
 
     useEffect(() => {
         async function fetchTransactions() {
+            if (!user?.id) return;
             try {
-                const res = await fetch(`/api/transactions?role=ADMIN&userId=${ADMIN_ID}`);
+                const res = await fetch(`/api/transactions?role=ADMIN&userId=${user.id}`);
                 const data: Transaction[] = await res.json();
                 // History: only REVISION and VALIDATED
-                setTransactions(data.filter(t => HISTORY_STATUSES.includes(t.status)));
+                if (Array.isArray(data)) {
+                    setTransactions(data.filter(t => HISTORY_STATUSES.includes(t.status)));
+                } else {
+                    setTransactions([]);
+                }
             } catch (err) {
                 console.error("Failed to fetch transactions:", err);
             } finally {
@@ -54,7 +53,7 @@ export default function AdminHistoryPage() {
             }
         }
         fetchTransactions();
-    }, []);
+    }, [user?.id]);
 
     const filtered = transactions.filter(
         (t) =>
@@ -70,7 +69,7 @@ export default function AdminHistoryPage() {
 
             <div className="relative z-10 flex flex-col h-full w-full">
                 <div className="shrink-0">
-                    <TopNavbar user={currentUser} />
+                    <TopNavbar />
                     <div className="mx-auto max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-4">
                         <div className="mb-6">
                             <h1 className="text-lg md:text-xl font-mono font-bold text-zinc-900 tracking-tighter">

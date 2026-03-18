@@ -6,24 +6,17 @@ import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
 import HoverCard from "@/components/ui/HoverCard";
 import AdminStatusBadge from "@/components/ui/AdminStatusBadge";
-import type { UserProfile, Transaction } from "@/lib/types";
-import type { DocumentStatus } from "@/lib/types";
+import { useSession } from "next-auth/react";
+import type { Transaction, DocumentStatus } from "@/lib/types";
 
-// Hardcoded to the seeded admin — replace with session once auth is implemented
-const ADMIN_ID = "69b6cd888d2d340d5984ce5c";
-
-const currentUser: UserProfile = {
-    id: ADMIN_ID,
-    autoId: 101,
-    name: "Admin LPPM",
-    nim: "ADM-001",
-    role: "ADMIN",
-};
+// Session-based user data will be used
 
 // Admin inbox shows DRAFT and REVIEWING transactions
 const INBOX_STATUSES: DocumentStatus[] = ["DRAFT", "REVIEWING"];
 
 export default function AdminDashboardPage() {
+    const { data: session } = useSession();
+    const user = session?.user;
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
@@ -43,7 +36,7 @@ export default function AdminDashboardPage() {
     useEffect(() => {
         async function fetchTransactions() {
             try {
-                const res = await fetch(`/api/transactions?role=ADMIN&userId=${ADMIN_ID}`);
+                const res = await fetch(`/api/transactions`);
                 const data: Transaction[] = await res.json();
                 // Inbox: only DRAFT and REVIEWING
                 setTransactions(data.filter(t => INBOX_STATUSES.includes(t.status)));
@@ -54,7 +47,7 @@ export default function AdminDashboardPage() {
             }
         }
         fetchTransactions();
-    }, []);
+    }, [user?.id]);
 
     const filtered = transactions.filter(
         (t) =>
@@ -70,7 +63,7 @@ export default function AdminDashboardPage() {
 
             <div className="relative z-10 flex flex-col h-full w-full">
                 <div className="shrink-0">
-                    <TopNavbar user={currentUser} />
+                    <TopNavbar />
                     <div className="mx-auto max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-4">
                         <div className="mb-6">
                             <h1 className="text-lg md:text-xl font-mono font-bold text-zinc-900 tracking-tighter">
@@ -144,11 +137,13 @@ export default function AdminDashboardPage() {
                                                         </p>
                                                         <AdminStatusBadge status={t.status} />
                                                     </div>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <p className="text-[10px] md:text-[11px] font-mono text-zinc-500 uppercase tracking-tight line-clamp-1">
-                                                            NIM: {t.student?.nim} // TYPE: {t.documentType.toUpperCase()}
+                                                    <div className="flex flex-col gap-1">
+                                                        <p className="text-[10px] md:text-[11px] font-mono text-zinc-500 uppercase tracking-tight flex items-center gap-1.5 translate-y-0.5">
+                                                            <span className="opacity-50">[ NIM:</span> {t.student?.nim} <span className="opacity-50">]</span> 
+                                                            <span className="w-1 h-1 rounded-full bg-zinc-200" />
+                                                            <span className="opacity-50">[ TYPE:</span> {t.documentType.toUpperCase()} <span className="opacity-50">]</span>
                                                         </p>
-                                                        <p className="text-[9px] md:text-[10px] font-mono text-zinc-400 tracking-tight">
+                                                        <p className="text-[9px] md:text-[10px] font-mono text-zinc-400 tracking-tight flex items-center gap-1 opacity-70">
                                                             ID: {t.id.slice(-8).toUpperCase()} // RECEIVED: {new Date(t.createdAt).toLocaleDateString()}
                                                         </p>
                                                     </div>

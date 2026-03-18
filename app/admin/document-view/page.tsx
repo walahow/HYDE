@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   FileText,
@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { DocumentStatus } from "@/lib/types";
-import { bakeSignatureIntoPdf } from "@/lib/pdf-utils";
+import { bakeMultipleSignatures, type PlacedSignature } from "@/lib/pdf-utils";
+import JSZip from "jszip";
 import dynamic from "next/dynamic";
 
 const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
@@ -47,16 +48,24 @@ export default function AdminDocumentView() {
   const [docType, setDocType] = useState<DocType>("Digital");
   const [status, setStatus] = useState<DocumentStatus>("DRAFT");
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [signature, setSignature] = useState<string | null>(null);
-  const [sigPosition, setSigPosition] = useState<{ 
-    x: number; 
-    y: number; 
-    scale: number; 
-    sigWidthPct?: number; 
-    sigHeightPct?: number; 
-    rotation?: number 
+  const [sigPosition, setSigPosition] = useState<{
+    x: number;
+    y: number;
+    scale: number;
+    sigWidthPct?: number;
+    sigHeightPct?: number;
+    rotation?: number
   } | null>(null);
   const [currPage, setCurrPage] = useState(1);
+  const [placements, setPlacements] = useState<PlacedSignature[]>([]);
+
+  const handleDeletePlacement = (id: string) =>
+    setPlacements((prev) => prev.filter((p) => p.id !== id));
+
+  const handleUpdatePlacement = (id: string, data: Omit<PlacedSignature, "id" | "fileId" | "page" | "imageDataUrl">) =>
+    setPlacements((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
   const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string; files?: any[]; finalFileUrl?: string | null } | null>(null);
@@ -94,8 +103,11 @@ export default function AdminDocumentView() {
     });
     setStatusLogs(data.statusLogs ?? []);
 
-    // Auto-select the signed file if it was just created
     if (data.files) {
+      // Default to the latest payload
+      setSelectedFileIndex(data.files.length - 1);
+
+      // Auto-select the signed file if it exists
       const signedIdx = data.files.findIndex((f: any) => f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf");
       if (signedIdx !== -1) setSelectedFileIndex(signedIdx);
     }
@@ -104,59 +116,127 @@ export default function AdminDocumentView() {
   async function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so same file can be re-uploaded
+    e.target.value = "";
 
-    // Validate size (1MB) and type
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(file.type))
       return alert("Only .png, .jpg, or .jpeg files are allowed for signatures.");
-    }
     if (file.size > 1024 * 1024) return alert("Signature too large (Max 1MB)");
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      setSignature(event.target?.result as string);
-      setSigPosition({ x: 50, y: 80, scale: 1.0 });
+      const imageDataUrl = event.target?.result as string;
+      // Immediately create a placement on the current page for the current document
+      const id = crypto.randomUUID();
+      setPlacements((prev) => [
+        ...prev,
+        { id, fileId: activeFile?.id ?? "", page: currPage, imageDataUrl, x: 50, y: 50, scale: 1, sigWidthPct: -1, sigHeightPct: -1, rotation: 0 },
+      ]);
     };
     reader.readAsDataURL(file);
   }
 
+  /**
+   * Bakes signatures onto EVERY file that has at least one placement, uploads
+   * each signed version, and returns an array of { originalFileId, signedUrl, filename }.
+   */
+  async function bakeAllSignedFiles(labelPrefix: string) {
+    if (!txId) throw new Error("No transaction");
+
+    // Group by fileId
+    const fileIds = [...new Set(placements.map((p) => p.fileId))];
+    const results: { originalFileId: string; signedUrl: string; filename: string }[] = [];
+
+    for (const fileId of fileIds) {
+      const file = txInfo?.files?.find((f: any) => f.id === fileId);
+      if (!file) continue;
+
+      const filePlacements = placements.filter((p) => p.fileId === fileId);
+      if (filePlacements.length === 0) continue;
+
+      const blob = await bakeMultipleSignatures(file.fileUrl, filePlacements);
+      const fname = `${labelPrefix}_${file.originalFileName}`;
+      const formFile = new File([blob], fname, { type: "application/pdf" });
+
+      const uploadRes = await fetch(
+        `/api/upload?filename=${encodeURIComponent(fname)}&transactionId=${txId}`,
+        { method: "POST", body: formFile }
+      );
+      if (!uploadRes.ok) throw new Error(`Upload failed for ${file.originalFileName}`);
+      const uploadData = await uploadRes.json();
+      results.push({ originalFileId: fileId, signedUrl: uploadData.url, filename: fname });
+    }
+
+    if (results.length === 0) throw new Error("No files with placements found");
+    return results;
+  }
+
   async function confirmValidation() {
-    if (!txId || !activeFile || !signature || !sigPosition) {
-      return alert("Please place a signature before validating.");
+    if (!txId || !activeFile) {
+      return alert("Missing transaction or file information.");
     }
 
     setSaving(true);
     try {
-      // 1. Bake signature into PDF
-      const signedPdfBlob = await bakeSignatureIntoPdf(activeFile.fileUrl, signature, sigPosition, currPage - 1);
-      const signedFile = new File([signedPdfBlob], `SIGNED_${activeFile.originalFileName}`, { type: "application/pdf" });
+      let finalFileUrl = activeFile.fileUrl;
+      let note = feedback || "Admin validated the document";
 
-      // 2. Upload signed PDF to Vercel Blob
-      const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(`SIGNED_${activeFile.originalFileName}`)}`, {
-        method: "POST",
-        body: signedFile,
-      });
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const uploadData = await uploadRes.json();
+      if (placements.length > 0) {
+        // Only upload files that actually have signatures baked in
+        const signedFiles = await bakeAllSignedFiles("OFFICIAL_SIGNED");
+        finalFileUrl = signedFiles[0].signedUrl;
+        note = feedback || `Admin validated with ${signedFiles.length} signed document(s)`;
+      }
 
-      // 3. Update Status and link finalFileUrl
       await fetch(`/api/transactions/${txId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          toStatus: "VALIDATED", 
-          changedById: ADMIN_ID, 
-          note: feedback || "Admin signed and validated the document",
-          finalFileUrl: uploadData.url
+        body: JSON.stringify({
+          toStatus: "VALIDATED",
+          changedById: ADMIN_ID,
+          note,
+          finalFileUrl,
         }),
       });
 
       setStatus("VALIDATED");
       setFeedback("");
+      setPlacements([]);
       await refreshLogs();
     } catch (err) {
       console.error("Validation error:", err);
       alert("Validation failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /** Dispatch REVISION — bake sigs onto every affected file, upload each as
+   * OFFICIAL_SIGNED prefix, then flip status to REVISION. */
+  async function dispatchRevision() {
+    if (!txId) return;
+    setSaving(true);
+    try {
+      let revisionNote = feedback || "Admin requested revision";
+
+      if (placements.length > 0) {
+        // Bake only the files that have placements, always under OFFICIAL_SIGNED prefix
+        const signedFiles = await bakeAllSignedFiles("OFFICIAL_SIGNED");
+        revisionNote = `[${signedFiles.length} file(s) signed] ` + revisionNote;
+      }
+
+      await fetch(`/api/transactions/${txId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toStatus: "REVISION", changedById: ADMIN_ID, note: revisionNote }),
+      });
+      setStatus("REVISION");
+      setFeedback("");
+      await refreshLogs();
+    } catch (err) {
+      console.error("Revision dispatch error:", err);
+      alert("Failed to dispatch revision. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -177,6 +257,16 @@ export default function AdminDocumentView() {
         documentType: data.documentType,
         files: data.files,
       });
+
+      if (data.files && data.files.length > 0) {
+        // Default to the latest payload
+        setSelectedFileIndex(data.files.length - 1);
+
+        // Auto-select the signed file if it exists
+        const signedIdx = data.files.findIndex((f: any) => f.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf");
+        if (signedIdx !== -1) setSelectedFileIndex(signedIdx);
+      }
+
       // Auto-set REVIEWING when admin opens a DRAFT transaction
       if (data.status === "DRAFT") {
         await fetch(`/api/transactions/${txId}/status`, {
@@ -227,7 +317,7 @@ export default function AdminDocumentView() {
                 <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK</span>
               </Link>
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsManifestOpen(!isManifestOpen)}
                   className="flex items-center gap-2 border border-zinc-200 px-2 md:px-3 py-1 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-all text-zinc-600 h-9 shrink-0"
                 >
@@ -236,11 +326,11 @@ export default function AdminDocumentView() {
                   </span>
                   <ChevronDown size={12} className={`text-zinc-400 shrink-0 transition-transform duration-200 ${isManifestOpen ? "rotate-180" : ""}`} />
                 </button>
-                
+
                 {isManifestOpen && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setIsManifestOpen(false)}
                     />
                     <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-zinc-200 shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-50">
@@ -292,12 +382,13 @@ export default function AdminDocumentView() {
           </div>
 
           <div className="flex-1 overflow-hidden bg-[#f0f0f2] relative group min-h-[400px] md:min-h-0">
-            <DocumentCanvas 
+            <DocumentCanvas
               fileUrl={activeFile?.fileUrl || null}
               isViewOnly={status !== "REVIEWING" || activeFile?.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf"}
-              appliedSignature={activeFile?.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" ? null : signature}
-              onSignatureMove={setSigPosition}
-              signaturePosition={sigPosition}
+              currentFileId={activeFile?.id}
+              placements={placements}
+              onUpdatePlacement={handleUpdatePlacement}
+              onDeletePlacement={handleDeletePlacement}
               onPageChange={setCurrPage}
             />
           </div>
@@ -341,7 +432,10 @@ export default function AdminDocumentView() {
             <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4 uppercase flex items-center gap-2">
               <MessageSquare size={12} className="text-zinc-300" /> COMMAND_INPUT_TERMINAL
             </h2>
-            <div className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto md:max-h-none flex flex-col gap-4 relative group/terminal z-0">
+            <div 
+              onClick={() => textareaRef.current?.focus()}
+              className="flex-1 bg-zinc-50 border border-zinc-200 p-4 md:p-6 font-mono text-[11px] overflow-y-auto md:max-h-none flex flex-col gap-4 relative group/terminal z-0 cursor-text"
+            >
               {/* Bayer Dithering Overlay */}
               <div className="absolute inset-0 pointer-events-none opacity-[0.10] mask-bayer-fade" />
 
@@ -373,6 +467,7 @@ export default function AdminDocumentView() {
                     {feedback}
                     <span className="inline-block w-2 h-0.5 bg-zinc-900 animate-terminal-blink ml-1 align-middle" />
                     <textarea
+                      ref={textareaRef}
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-text resize-none focus:outline-none"
@@ -391,10 +486,10 @@ export default function AdminDocumentView() {
                 <p className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase text-center">
                   {signature ? "[ SIGNATURE_LOADED ]" : "[ LOAD_OFFICIAL_SIGNATURE_HERE ]"}
                 </p>
-                <input 
-                  type="file" 
-                  accept=".png,.jpg,.jpeg,image/png,image/jpeg" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                  className="hidden"
                   onChange={handleSignatureUpload}
                 />
               </label>
@@ -417,7 +512,7 @@ export default function AdminDocumentView() {
                   disabled={saving || !txId}
                   onClick={() => {
                     if (status === "DRAFT") changeStatus("REVIEWING");
-                    else if (status === "REVIEWING") changeStatus("REVISION", feedback || undefined);
+                    else if (status === "REVIEWING") dispatchRevision();
                   }}
                   className="w-full bg-white text-zinc-900 border border-zinc-200 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -439,7 +534,7 @@ export default function AdminDocumentView() {
                 <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-100 transition-all group-hover/btn-secondary:h-16 group-hover/btn-secondary:bg-emerald-300 hidden md:block" />
 
                 <button
-                  disabled={saving || !txId || (status === "REVIEWING" && !signature)}
+                  disabled={saving || !txId}
                   onClick={confirmValidation}
                   className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -448,25 +543,47 @@ export default function AdminDocumentView() {
               </div>
             )}
 
-            {/* ACTION_C: DOWNLOAD OFFICIAL (VALIDATED ONLY) */}
-            {status === "VALIDATED" && txInfo?.finalFileUrl && (
+            {/* ACTION_C: DOWNLOAD SIGNED FILES (VALIDATED ONLY) */}
+            {status === "VALIDATED" && txInfo?.files && txInfo.files.some((f: any) => f.originalFileName.startsWith("OFFICIAL_SIGNED")) && (
               <div className="relative group/btn-download">
-                {/* Top-Left Long Overflow */}
                 <div className="absolute -top-2 -left-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
                 <div className="absolute -top-4 -left-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
-                
-                {/* Bottom-Right Long Overflow */}
                 <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
                 <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
 
-                <a 
-                  href={`/api/blob/proxy?url=${encodeURIComponent(txInfo.finalFileUrl)}&filename=${encodeURIComponent(`OFFICIAL_SIGNED_${txId?.slice(-6)}.pdf`)}`} 
-                  download 
+                <button
+                  onClick={async () => {
+                    const signedFiles = (txInfo?.files ?? []).filter((f: any) => f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+                    if (signedFiles.length === 1) {
+                      // Single file — direct download
+                      const a = document.createElement("a");
+                      a.href = `/api/blob/proxy?url=${encodeURIComponent(signedFiles[0].fileUrl)}&filename=${encodeURIComponent(signedFiles[0].originalFileName)}`;
+                      a.download = signedFiles[0].originalFileName;
+                      a.click();
+                    } else {
+                      // Multiple files — bundle as ZIP (fetch all in parallel)
+                      const zip = new JSZip();
+                      await Promise.all(signedFiles.map(async (file: any) => {
+                        const proxyUrl = `/api/blob/proxy?url=${encodeURIComponent(file.fileUrl)}`;
+                        const res = await fetch(proxyUrl);
+                        const buf = await res.arrayBuffer();
+                        zip.file(file.originalFileName, buf);
+                      }));
+                      const zipBlob = await zip.generateAsync({ type: "blob" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(zipBlob);
+                      a.download = `OFFICIAL_SIGNED_${txId?.slice(-6)}.zip`;
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+                    }
+                  }}
                   className="w-full bg-emerald-600 text-white border border-emerald-500 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
                 >
                   <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
-                  DOWNLOAD_OFFICIAL_SIGNED_PDF ✓
-                </a>
+                  {(txInfo?.files ?? []).filter((f: any) => f.originalFileName.startsWith("OFFICIAL_SIGNED")).length > 1
+                    ? `DOWNLOAD_ALL_SIGNED_ZIP (${(txInfo?.files ?? []).filter((f: any) => f.originalFileName.startsWith("OFFICIAL_SIGNED")).length} FILES) ✓`
+                    : "DOWNLOAD_OFFICIAL_SIGNED_PDF ✓"}
+                </button>
               </div>
             )}
 

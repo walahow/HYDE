@@ -7,20 +7,14 @@ import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
 import HoverCard from "@/components/ui/HoverCard";
 import StatusBadge from "@/components/ui/StatusBadge";
-import type { UserProfile, Transaction } from "@/lib/types";
+import { useSession } from "next-auth/react";
+import type { Transaction } from "@/lib/types";
 
-// Hardcoded to the seeded student — replace with session once auth is implemented
-const STUDENT_ID = "69b6cd888d2d340d5984ce5f";
-
-const currentUser: UserProfile = {
-    id: STUDENT_ID,
-    autoId: 201,
-    name: "Ahmad Fauzan",
-    nim: "H1101221001",
-    role: "STUDENT",
-};
+// Session-based user data will be used
 
 export default function RiwayatMahasiswaPage() {
+    const { data: session } = useSession();
+    const user = session?.user;
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
@@ -40,7 +34,7 @@ export default function RiwayatMahasiswaPage() {
     useEffect(() => {
         async function fetchTransactions() {
             try {
-                const res = await fetch(`/api/transactions?role=STUDENT&userId=${STUDENT_ID}`);
+                const res = await fetch(`/api/transactions`);
                 const data: Transaction[] = await res.json();
                 setTransactions(data);
             } catch (err) {
@@ -50,7 +44,7 @@ export default function RiwayatMahasiswaPage() {
             }
         }
         fetchTransactions();
-    }, []);
+    }, [user?.id]);
 
     const filtered = transactions.filter(
         (t) =>
@@ -65,7 +59,7 @@ export default function RiwayatMahasiswaPage() {
 
             <div className="relative z-10 flex flex-col h-screen w-full">
                 <div className="shrink-0">
-                    <TopNavbar user={currentUser} />
+                    <TopNavbar />
                     <div className="mx-auto max-w-5xl px-4 md:px-6 pt-6 md:pt-10 pb-4">
                         <div className="relative inline-block w-full">
                             <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
@@ -133,12 +127,12 @@ export default function RiwayatMahasiswaPage() {
                                                         </p>
                                                         <StatusBadge status={t.status} />
                                                     </div>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <p className="text-[11px] font-mono text-zinc-500 uppercase">
-                                                            {t.documentType}
+                                                    <div className="flex flex-col gap-1">
+                                                        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-tight flex items-center gap-1.5 translate-y-0.5">
+                                                            <span className="opacity-50">[ TYPE:</span> {t.documentType} <span className="opacity-50">]</span>
                                                         </p>
-                                                        <p className="text-[10px] font-mono text-zinc-400 tracking-tight">
-                                                            {t.id.slice(-8).toUpperCase()} // {new Date(t.createdAt).toLocaleDateString()}
+                                                        <p className="text-[10px] font-mono text-zinc-400 tracking-tight flex items-center gap-1 opacity-70">
+                                                            ID: {t.id.slice(-8).toUpperCase()} // {new Date(t.createdAt).toLocaleDateString()}
                                                         </p>
                                                     </div>
                                                 </div>
