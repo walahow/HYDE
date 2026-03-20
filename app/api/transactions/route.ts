@@ -38,10 +38,15 @@ export async function POST(req: Request) {
     const { id: studentId } = session.user;
     const body = await req.json();
 
-    const { documentType, adminId, file } = body;
+    const { documentType, adminId, file, mode } = body;
 
     if (!documentType || !adminId) {
       return NextResponse.json({ message: "documentType and adminId are required" }, { status: 400 });
+    }
+
+    const validModes = ["DIGITAL", "HYBRID"];
+    if (mode !== undefined && !validModes.includes(mode)) {
+      return NextResponse.json({ message: "mode must be DIGITAL or HYBRID" }, { status: 400 });
     }
 
     const transaction = await prisma.transaction.create({
@@ -50,8 +55,10 @@ export async function POST(req: Request) {
         studentId,
         adminId,
         status: "DRAFT",
+        mode: mode ?? "DIGITAL",
       },
     });
+
 
     // Link the file if provided during initial submission
     if (file && file.url) {

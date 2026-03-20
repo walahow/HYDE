@@ -20,6 +20,8 @@ import {
   ZoomIn,
   ZoomOut,
   Download,
+  QrCode,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import type { DocumentStatus } from "@/lib/types";
@@ -37,6 +39,7 @@ const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
 });
 
 type DocType = "Digital" | "Hybrid";
+type TxMode = "DIGITAL" | "HYBRID";
 
 // Admin ID — replace with session once auth is implemented
 const ADMIN_ID = "69b6cd888d2d340d5984ce5c";
@@ -46,7 +49,7 @@ export default function AdminDocumentView() {
   const txId = searchParams.get("txId");
 
   const [docType, setDocType] = useState<DocType>("Digital");
-  const [status, setStatus] = useState<DocumentStatus>("DRAFT");
+  const [status, setStatus] = useState<string>("DRAFT");
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [signature, setSignature] = useState<string | null>(null);
@@ -68,7 +71,8 @@ export default function AdminDocumentView() {
     setPlacements((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
-  const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string; files?: any[]; finalFileUrl?: string | null } | null>(null);
+  const [txMode, setTxMode] = useState<TxMode>("DIGITAL");
+  const [txInfo, setTxInfo] = useState<{ studentName?: string; nim?: string; documentType?: string; files?: any[]; finalFileUrl?: string | null; scannedAt?: string | null } | null>(null);
   const [statusLogs, setStatusLogs] = useState<Array<{
     id: string;
     changedAt: string;
@@ -79,12 +83,17 @@ export default function AdminDocumentView() {
   }>>([]);
   const [isManifestOpen, setIsManifestOpen] = useState(false);
 
-  const pipelineLabels: Record<DocumentStatus, string> = {
+  const pipelineLabels: Record<string, string> = {
     DRAFT: "DRAFT",
     REVIEWING: "REVIEWING",
     REVISION: "REVISION",
+    AWAITING_SCAN: "AWAIT_SCAN",
     VALIDATED: "VALIDATED",
   };
+
+  const pipeline = txMode === "HYBRID"
+    ? ["DRAFT", "REVIEWING", "REVISION", "AWAITING_SCAN", "VALIDATED"]
+    : ["DRAFT", "REVIEWING", "REVISION", "VALIDATED"];
 
   const files = txInfo?.files || [];
   const activeFile = files[selectedFileIndex];
@@ -99,8 +108,11 @@ export default function AdminDocumentView() {
       nim: data.student?.nim,
       documentType: data.documentType,
       files: data.files,
-      finalFileUrl: data.finalFileUrl
+      finalFileUrl: data.finalFileUrl,
+      scannedAt: data.scannedAt ?? null,
     });
+    if (data.mode) setTxMode(data.mode as TxMode);
+    if (data.status) setStatus(data.status);
     setStatusLogs(data.statusLogs ?? []);
 
     if (data.files) {
@@ -189,18 +201,20 @@ export default function AdminDocumentView() {
         note = feedback || `Admin validated with ${signedFiles.length} signed document(s)`;
       }
 
+      const nextStatus = txMode === "HYBRID" ? "AWAITING_SCAN" : "VALIDATED";
+
       await fetch(`/api/transactions/${txId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          toStatus: "VALIDATED",
+          toStatus: nextStatus,
           changedById: ADMIN_ID,
           note,
           finalFileUrl,
         }),
       });
 
-      setStatus("VALIDATED");
+      setStatus(nextStatus);
       setFeedback("");
       setPlacements([]);
       await refreshLogs();
@@ -256,6 +270,7 @@ export default function AdminDocumentView() {
         nim: data.student?.nim,
         documentType: data.documentType,
         files: data.files,
+        scannedAt: data.scannedAt ?? null,
       });
 
       if (data.files && data.files.length > 0) {
@@ -277,6 +292,9 @@ export default function AdminDocumentView() {
         setStatus("REVIEWING");
         await refreshLogs();
       }
+
+      // Sync mode from API
+      if (data.mode) setTxMode(data.mode as TxMode);
     }
     initTransaction();
   }, [txId]);
@@ -338,29 +356,43 @@ export default function AdminDocumentView() {
                         <span className="text-[8px] font-mono font-bold text-zinc-400 tracking-widest uppercase">Document Manifest Navigator</span>
                       </div>
                       <div className="max-h-[300px] overflow-y-auto">
-                        {files.map((file: any, idx: number) => {
-                          const isSigned = file.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf";
-                          return (
-                            <button
-                              key={file.id}
-                              onClick={() => {
-                                setSelectedFileIndex(idx);
-                                setIsManifestOpen(false);
-                              }}
-                              className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
-                            >
-                              <div className="flex flex-col gap-0.5 truncate bg-transparent">
-                                <span className={`truncate ${isSigned ? "text-emerald-600" : ""}`}>
-                                  {isSigned ? "✓ OFFICIAL_SIGNED" : `📂 PAYLOAD_0${idx + 1}`}
-                                </span>
-                                <span className="text-[8px] text-zinc-400 truncate opacity-70">
-                                  {file.originalFileName}
-                                </span>
-                              </div>
-                              {selectedFileIndex === idx && <span className="text-[7px] bg-zinc-900 text-white px-1 leading-4">ACTIVE</span>}
-                            </button>
-                          );
-                        })}
+                        {(() => {
+                          const originalFiles = files.filter((f: any) => !f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+                          const signedFiles = files.filter((f: any) => f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+
+                          return originalFiles.map((file: any, idx: number) => {
+                            // Find the signed version of THIS file
+                            const signedVersion = signedFiles.find((sf: any) => 
+                              sf.originalFileName === `OFFICIAL_SIGNED_${file.originalFileName}` ||
+                              (file.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" && sf === file) // Legacy check
+                            );
+                            
+                            const isActive = activeFile?.id === file.id || activeFile?.id === signedVersion?.id;
+                            const displayFile = signedVersion || file;
+                            const displayIdx = files.indexOf(displayFile);
+
+                            return (
+                              <button
+                                key={file.id}
+                                onClick={() => {
+                                  setSelectedFileIndex(displayIdx);
+                                  setIsManifestOpen(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${isActive ? "bg-zinc-900 text-white font-bold" : "text-zinc-500"}`}
+                              >
+                                <div className="flex flex-col gap-0.5 truncate bg-transparent">
+                                  <span className={`truncate ${signedVersion ? "text-emerald-400" : ""}`}>
+                                    {signedVersion ? "✓ OFFICIAL_SIGNED" : `📂 PAYLOAD_0${idx + 1}`}
+                                  </span>
+                                  <span className="text-[8px] text-zinc-400 truncate opacity-70">
+                                    {file.originalFileName}
+                                  </span>
+                                </div>
+                                {isActive && <span className="text-[7px] bg-white text-zinc-900 px-1 leading-4">ACTIVE</span>}
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   </>
@@ -370,9 +402,15 @@ export default function AdminDocumentView() {
 
             {/* STATUS PIPELINE */}
             <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2 text-zinc-900/40">
-              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s, i, arr) => (
+              {pipeline.map((s, i, arr) => (
                 <React.Fragment key={s}>
-                  <span className={`px-1.5 py-0.5 transition-all border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                  <span className={`px-1.5 py-0.5 transition-all border ${
+                    status === s
+                      ? s === "VALIDATED" ? "bg-emerald-700 text-white border-emerald-700"
+                      : s === "AWAITING_SCAN" ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-zinc-900 text-white border-zinc-900"
+                      : "text-zinc-900/40 border-transparent"
+                  }`}>
                     {pipelineLabels[s]}
                   </span>
                   {i < arr.length - 1 && <span className="text-zinc-200">→</span>}
@@ -398,9 +436,15 @@ export default function AdminDocumentView() {
         <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[480px] flex flex-col bg-white overflow-hidden shrink-0 transition-all duration-500 ease-in-out">
           {/* MOBILE STATUS PIPELINE */}
           <div className="block sm:hidden p-4 border-b border-zinc-100 bg-zinc-50/50">
-            <div className="flex items-center justify-between font-mono text-[8px] font-bold">
-              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s) => (
-                <span key={s} className={`px-2 py-1 border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>{s}</span>
+            <div className="flex items-center justify-between gap-1 font-mono text-[8px] font-bold flex-wrap">
+              {pipeline.map((s) => (
+                <span key={s} className={`px-1.5 py-0.5 border ${
+                  status === s
+                    ? s === "VALIDATED" ? "bg-emerald-700 text-white border-emerald-700"
+                    : s === "AWAITING_SCAN" ? "bg-amber-600 text-white border-amber-600"
+                    : "bg-zinc-900 text-white border-zinc-900"
+                    : "text-zinc-900/40 border-zinc-100"
+                }`}>{pipelineLabels[s]}</span>
               ))}
             </div>
           </div>
@@ -421,7 +465,7 @@ export default function AdminDocumentView() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{txInfo?.nim ?? "--------"}</span> // TYPE: <span className={docType === "Digital" ? "text-blue-600" : "text-amber-600"}>{docType.toUpperCase()}</span></span>
+                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{txInfo?.nim ?? "--------"}</span> // TYPE: <span className={txMode === "DIGITAL" ? "text-blue-600" : "text-amber-600"}>{txMode}</span></span>
                 </div>
               </div>
             </div>
@@ -478,8 +522,8 @@ export default function AdminDocumentView() {
             </div>
           </div>
 
-          {/* D. SIGNATURE DROPZONE (Conditional) */}
-          {status === "REVIEWING" && docType === "Digital" && (
+          {/* D. SIGNATURE DROPZONE (Conditional - DIGITAL ONLY) */}
+          {status === "REVIEWING" && txMode === "DIGITAL" && (
             <div className="px-6 md:px-8 pb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <label className="border-2 border-dashed border-zinc-300 p-6 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 group cursor-pointer hover:border-zinc-900 active:bg-zinc-100 transition-all text-zinc-400 hover:text-zinc-900 min-h-[100px]">
                 <Upload size={20} className="transition-colors" />
@@ -507,7 +551,7 @@ export default function AdminDocumentView() {
                 </>
               )}
 
-              {status !== "VALIDATED" && (
+              {status !== "VALIDATED" && status !== "AWAITING_SCAN" && (
                 <button
                   disabled={saving || !txId}
                   onClick={() => {
@@ -538,7 +582,7 @@ export default function AdminDocumentView() {
                   onClick={confirmValidation}
                   className="w-full bg-emerald-50/30 text-emerald-900 border border-emerald-200/50 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? "SAVING..." : "VALIDATE_AND_ACCEPT_PAYLOAD ✓"}
+                  {saving ? "SAVING..." : txMode === "HYBRID" ? "APPROVE_FOR_PHYSICAL_SCAN ✓" : "VALIDATE_AND_ACCEPT_PAYLOAD ✓"}
                 </button>
               </div>
             )}
@@ -587,8 +631,90 @@ export default function AdminDocumentView() {
               </div>
             )}
 
+            {/* ACTION_D: CETAK DISPOSISI (HYBRID + VALIDATED/AWAIT_SCAN) */}
+            {txMode === "HYBRID" && (status === "VALIDATED" || status === "AWAITING_SCAN") && (
+              <div className="relative group/btn-disposisi">
+                <div className="absolute -top-2 -left-4 w-12 h-px bg-amber-200 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                <div className="absolute -top-4 -left-2 w-px h-12 bg-amber-200 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                <button
+                  disabled={saving || !txId}
+                  onClick={async () => {
+                    if (!txId) return;
+                    setSaving(true);
+                    try {
+                      const res = await fetch(`/api/transactions/${txId}/disposisi`);
+                      if (!res.ok) { alert("Gagal menghasilkan disposisi."); return; }
+                      const data = await res.json();
+                      const { qrDataUrl, transaction: tx } = data;
+                      const win = window.open("", "_blank");
+                      if (!win) { alert("Popup blocked. Allow popups for this site."); return; }
+                      win.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Disposisi — ${tx.documentType}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', monospace; background: #fff; color: #111; padding: 40px; }
+    .header { border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; }
+    .header p { font-size: 10px; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; margin-bottom: 24px; }
+    .grid .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.15em; color: #777; padding-top: 2px; }
+    .grid .value { font-size: 13px; font-weight: 700; }
+    .qr-section { display: flex; flex-direction: column; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 24px; margin-top: 24px; }
+    .qr-section img { width: 200px; height: 200px; }
+    .qr-note { font-size: 9px; text-transform: uppercase; letter-spacing: 0.15em; color: #555; text-align: center; max-width: 280px; }
+    .footer { margin-top: 32px; border-top: 1px solid #ddd; padding-top: 12px; font-size: 8px; color: #aaa; letter-spacing: 0.1em; text-transform: uppercase; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>HYDE — Disposisi Dokumen</h1>
+    <p>Sistem Pengelolaan Dokumen Digital &amp; Hybrid</p>
+  </div>
+  <div class="grid">
+    <span class="label">Jenis Dokumen</span><span class="value">${tx.documentType}</span>
+    <span class="label">Nama Mahasiswa</span><span class="value">${tx.student.name}</span>
+    <span class="label">NIM</span><span class="value">${tx.student.nim}</span>
+    <span class="label">Tujuan</span><span class="value">${tx.admin.destinationName ?? "—"}</span>
+    <span class="label">Tanggal Pengajuan</span><span class="value">${new Date(tx.createdAt).toLocaleDateString("id-ID", { dateStyle: "long" })}</span>
+    <span class="label">Transaction ID</span><span class="value">${tx.id}</span>
+  </div>
+  <div class="qr-section">
+    <img src="${qrDataUrl}" alt="QR Code" />
+    <p class="qr-note">Scan QR ini untuk konfirmasi penerimaan dokumen fisik</p>
+  </div>
+  <div class="footer">Dicetak oleh sistem HYDE &bull; Dokumen ini sah tanpa tanda tangan manual &bull; Mode: HYBRID</div>
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`);
+                      win.document.close();
+                      await refreshLogs();
+                    } catch (err) {
+                      console.error("Disposisi error:", err);
+                      alert("Gagal menghasilkan disposisi.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="w-full bg-amber-50 text-amber-900 border border-amber-300 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-amber-600 hover:text-white active:bg-amber-700 active:text-white transition-all relative z-10 group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? "GENERATING..." : "CETAK_DISPOSISI ✦"}
+                </button>
+              </div>
+            )}
+
+            {/* ACTION_E: KONFIRMASI SCAN QR (REMOVED - AUTOMATIC) */}
+            {/* status === "COMPLETED" display is removed as it's unified under VALIDATED */}
+
             <div className="mt-5 p-3 border border-zinc-200 bg-white flex items-center gap-3 shadow-inner">
-              <div className={`w-1.5 h-1.5 rounded-none ${status === "VALIDATED" ? "bg-emerald-500" : "bg-zinc-400"} animate-pulse`} />
+              <div className={`w-1.5 h-1.5 rounded-none ${
+                status === "VALIDATED" ? "bg-emerald-500" :
+                status === "AWAITING_SCAN" ? "bg-amber-500" :
+                "bg-zinc-400"
+              } animate-pulse`} />
               <p className="text-[9px] font-mono font-medium tracking-tight text-zinc-500 leading-tight">
                 AUTH_LVL: DESTINATION_ADMIN // SESSION_TOKEN: "SESSION_SYNC_ACTIVE"
               </p>

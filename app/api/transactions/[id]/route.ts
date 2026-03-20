@@ -22,7 +22,10 @@ export async function GET(
         admin: { select: { id: true, name: true, destinationName: true } },
         files: { orderBy: { uploadedAt: "asc" } },
         messages: { orderBy: { createdAt: "asc" } },
-        statusLogs: { orderBy: { changedAt: "asc" } },
+        statusLogs: { 
+          orderBy: { changedAt: "asc" },
+          include: { changedBy: { select: { id: true, name: true, role: true } } }
+        },
       },
     });
 

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Power, Building2, LayoutDashboard, History } from "lucide-react";
+import { ChevronDown, Power, Building2, LayoutDashboard, History, QrCode } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
 
@@ -91,8 +91,17 @@ export default function TopNavbar() {
                     </Link>
                 </div>
 
-                {/* Right: Profile dropdown (Desktop Only) */}
-                <div className="hidden md:flex items-center justify-end">
+                {/* Right: Actions + Profile dropdown (Desktop Only) */}
+                <div className="hidden md:flex items-center justify-end gap-3">
+                    {user.role === "ADMIN" && (
+                        <Link
+                            href="/admin/scan"
+                            className="flex items-center gap-1.5 rounded-none h-9 px-4 text-[10px] font-mono font-bold text-zinc-500 border border-zinc-200 transition-all hover:bg-zinc-900 hover:text-white hover:border-zinc-900"
+                        >
+                            <QrCode size={14} className="opacity-70 group-hover:opacity-100" />
+                            [ SCAN_QR ]
+                        </Link>
+                    )}
                     <ProfileDropdown user={user} open={open} setOpen={setOpen} dropdownRef={dropdownRef} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} />
                 </div>
 

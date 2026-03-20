@@ -5,7 +5,7 @@ interface StatusBadgeProps {
 }
 
 const config: Record<
-    DocumentStatus,
+    string,
     { label: string; className: string; dotColor: string; animate?: boolean }
 > = {
     DRAFT: {
@@ -27,8 +27,14 @@ const config: Record<
     },
     VALIDATED: {
         label: "VALIDATED",
-        className: "bg-zinc-50 text-zinc-400 border border-zinc-200 shadow-none",
-        dotColor: "bg-zinc-300",
+        className: "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-none",
+        dotColor: "bg-emerald-400",
+    },
+    AWAITING_SCAN: {
+        label: "MENUNGGU SCAN",
+        className: "bg-amber-50 text-amber-700 border border-amber-300",
+        dotColor: "bg-amber-500",
+        animate: true,
     },
 };
 

@@ -13,15 +13,22 @@ enum Role {
   ADMIN
 }
 
+enum TransactionMode {
+  DIGITAL
+  HYBRID
+}
+
 // Status lifecycle:
-// DRAFT      → student just submitted the transaction
-// REVIEWING  → admin has opened and is reviewing it
-// REVISION   → admin requests changes from student
-// VALIDATED  → admin accepted and applied digital signature
+// DRAFT         → student just submitted the transaction
+// REVIEWING     → admin has opened and is reviewing it
+// REVISION      → admin requests changes from student
+// AWAITING_SCAN → HYBRID only: admin approved, waiting for physical QR scan
+// VALIDATED     → terminal: fully signed (DIGITAL) or QR scanned (HYBRID)
 enum DocumentStatus {
   DRAFT
   REVIEWING
   REVISION
+  AWAITING_SCAN
   VALIDATED
 }
 
@@ -50,11 +57,13 @@ model User {
 
 // The core submission record — what shows on dashboard & history cards.
 model Transaction {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
   documentType String // encrypted at app layer; visible only to involved student & admin
-  status       DocumentStatus @default(DRAFT)
-  createdAt    DateTime       @default(now())
+  status       DocumentStatus  @default(DRAFT)
+  mode         TransactionMode @default(DIGITAL)
+  createdAt    DateTime        @default(now())
   completedAt  DateTime? // set when status → VALIDATED
+  scannedAt    DateTime? // set when status → VALIDATED (HYBRID only)
   finalFileUrl String?   // URL to the processed, signed PDF
 
   studentId String @db.ObjectId

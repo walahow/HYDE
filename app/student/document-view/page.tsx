@@ -17,9 +17,10 @@ import {
   Loader2,
   ZoomIn,
   ZoomOut,
+  QrCode,
 } from "lucide-react";
 import Link from "next/link";
-import type { DocumentStatus } from "@/lib/types";
+import type { DocumentStatus, TransactionMode } from "@/lib/types";
 import dynamic from "next/dynamic";
 
 const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
@@ -46,9 +47,11 @@ interface TransactionDetail {
   id: string;
   documentType: string;
   status: DocumentStatus;
+  mode: TransactionMode;
   createdAt: string;
+  scannedAt?: string | null;
   admin?: { id: string; name: string; destinationName?: string | null; categoryCode?: string | null };
-  files?: { id: string; fileUrl: string; originalFileName: string }[];
+  files?: { id: string; fileUrl: string; originalFileName: string; uploadedAt: string }[];
   finalFileUrl?: string | null;
   statusLogs?: StatusLog[];
 }
@@ -69,6 +72,7 @@ export default function StudentDocumentView() {
 
   // New submission state (when no txId, comes from dashboard)
   const [documentType, setDocumentType] = useState("");
+  const [transactionMode, setTransactionMode] = useState<"DIGITAL" | "HYBRID">("DIGITAL");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -145,14 +149,15 @@ export default function StudentDocumentView() {
     fetchTransaction();
   }, [txId]);
 
-  const status = transaction?.status ?? null;
+  const status: string | null = transaction?.status ?? null;
 
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
-  const pipelineLabels: Record<DocumentStatus, string> = {
+  const pipelineLabels: Record<string, string> = {
     DRAFT: "DRAFT",
     REVIEWING: "REVIEWING",
     REVISION: "REVISION",
+    AWAITING_SCAN: "AWAIT_SCAN",
     VALIDATED: "VALIDATED",
   };
 
@@ -188,6 +193,7 @@ export default function StudentDocumentView() {
           studentId: STUDENT_ID, 
           adminId: destId, 
           documentType: documentType.trim(),
+          mode: transactionMode,
           file: fileData
         }),
       });
@@ -271,7 +277,7 @@ export default function StudentDocumentView() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                    <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className="text-blue-600">DIGITAL</span></span>
+                    <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className={transactionMode === "DIGITAL" ? "text-blue-600" : "text-amber-600"}>{transactionMode}</span></span>
                   </div>
                 </div>
               </div>
@@ -331,6 +337,53 @@ export default function StudentDocumentView() {
                       </>
                     )}
                   </div>
+                </div>
+
+                {/* MODE SELECTOR */}
+                <div>
+                  <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">TRANSACTION_MODE</label>
+                  <div className="grid grid-cols-2 gap-0 border border-zinc-200">
+                    <button
+                      type="button"
+                      onClick={() => setTransactionMode("DIGITAL")}
+                      className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all border-r border-zinc-200 flex flex-col items-center gap-1 ${
+                        transactionMode === "DIGITAL"
+                          ? "bg-zinc-900 text-white"
+                          : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
+                      }`}
+                    >
+                      <span className={`text-[8px] font-mono tracking-[0.15em] ${
+                        transactionMode === "DIGITAL" ? "text-blue-400" : "text-zinc-300"
+                      }`}>◈ MODE_A</span>
+                      DIGITAL
+                      <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
+                        transactionMode === "DIGITAL" ? "text-zinc-400" : "text-zinc-300"
+                      }`}>E-signature only</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransactionMode("HYBRID")}
+                      className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all flex flex-col items-center gap-1 ${
+                        transactionMode === "HYBRID"
+                          ? "bg-zinc-900 text-white"
+                          : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
+                      }`}
+                    >
+                      <span className={`text-[8px] font-mono tracking-[0.15em] ${
+                        transactionMode === "HYBRID" ? "text-amber-400" : "text-zinc-300"
+                      }`}>◈ MODE_B</span>
+                      HYBRID
+                      <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
+                        transactionMode === "HYBRID" ? "text-zinc-400" : "text-zinc-300"
+                      }`}>E-sign + physical scan</span>
+                    </button>
+                  </div>
+                  {transactionMode === "HYBRID" && (
+                    <div className="mt-2 flex items-start gap-2 font-mono text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2">
+                      <span className="shrink-0 mt-px">⚠</span>
+                      <span>Requires physical QR scan at the office after admin approval. Document will not be closed until scanned.</span>
+                    </div>
+                  )}
                 </div>
 
                 {submitError && (
@@ -410,29 +463,45 @@ export default function StudentDocumentView() {
                         <span className="text-[8px] font-mono font-bold text-zinc-400 tracking-widest uppercase">Document Manifest Navigator</span>
                       </div>
                       <div className="max-h-[300px] overflow-y-auto">
-                        {transaction?.files?.map((file, idx) => {
-                          const isSigned = file.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf";
-                          return (
-                            <button
-                              key={file.id}
-                              onClick={() => {
-                                setSelectedFileIndex(idx);
-                                setIsManifestOpen(false);
-                              }}
-                              className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${selectedFileIndex === idx ? "bg-zinc-50 text-zinc-900 font-bold" : "text-zinc-500"}`}
-                            >
-                              <div className="flex flex-col gap-0.5 truncate bg-transparent">
-                                <span className={`truncate ${isSigned ? "text-emerald-600" : ""}`}>
-                                  {isSigned ? "✓ OFFICIAL_SIGNED" : `📂 PAYLOAD_0${idx + 1}`}
-                                </span>
-                                <span className="text-[8px] text-zinc-400 truncate opacity-70">
-                                  {file.originalFileName}
-                                </span>
-                              </div>
-                              {selectedFileIndex === idx && <span className="text-[7px] bg-zinc-900 text-white px-1 leading-4">ACTIVE</span>}
-                            </button>
-                          );
-                        })}
+                        {(() => {
+                          const allFiles = transaction?.files || [];
+                          const originalFiles = allFiles.filter(f => !f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+                          const signedFiles = allFiles.filter(f => f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+
+                          return originalFiles.map((file, idx) => {
+                            // Find the signed version of THIS file
+                            const signedVersion = signedFiles.find(sf => 
+                              sf.originalFileName === `OFFICIAL_SIGNED_${file.originalFileName}` ||
+                              (file.originalFileName === "OFFICIAL_SIGNED_DOCUMENT.pdf" && sf === file) // Legacy check
+                            );
+                            
+                            const activeFile = allFiles[selectedFileIndex];
+                            const isActive = activeFile?.id === file.id || activeFile?.id === signedVersion?.id;
+                            const displayFile = signedVersion || file;
+                            const displayIdx = allFiles.indexOf(displayFile);
+
+                            return (
+                              <button
+                                key={file.id}
+                                onClick={() => {
+                                  setSelectedFileIndex(displayIdx);
+                                  setIsManifestOpen(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left font-mono text-[10px] hover:bg-zinc-50 flex items-center justify-between transition-colors border-b border-zinc-100 last:border-0 ${isActive ? "bg-zinc-900 text-white font-bold" : "text-zinc-500"}`}
+                              >
+                                <div className="flex flex-col gap-0.5 truncate bg-transparent">
+                                  <span className={`truncate ${signedVersion ? "text-emerald-400" : ""}`}>
+                                    {signedVersion ? "✓ OFFICIAL_SIGNED" : `📂 PAYLOAD_0${idx + 1}`}
+                                  </span>
+                                  <span className="text-[8px] text-zinc-400 truncate opacity-70">
+                                    {file.originalFileName}
+                                  </span>
+                                </div>
+                                {isActive && <span className="text-[7px] bg-white text-zinc-900 px-1 leading-4">ACTIVE</span>}
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   </>
@@ -441,10 +510,19 @@ export default function StudentDocumentView() {
             </div>
 
             {/* STATUS PIPELINE */}
-            <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2">
-              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s, i, arr) => (
+            <div className="hidden sm:flex items-center gap-2 lg:gap-3 font-mono text-[9px] md:text-[10px] lg:text-[11px] font-bold h-full shrink-0 px-2 text-zinc-900/40">
+              {(transaction.mode === "HYBRID" 
+                ? ["DRAFT", "REVIEWING", "REVISION", "AWAITING_SCAN", "VALIDATED"] 
+                : ["DRAFT", "REVIEWING", "REVISION", "VALIDATED"]
+              ).map((s, i, arr) => (
                 <React.Fragment key={s}>
-                  <span className={`px-1.5 py-0.5 transition-all border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-transparent"}`}>
+                  <span className={`px-1.5 py-0.5 transition-all border ${
+                    status === s 
+                      ? s === "VALIDATED" ? "bg-emerald-700 text-white border-emerald-700"
+                      : s === "AWAITING_SCAN" ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-zinc-900 text-white border-zinc-900"
+                      : "text-zinc-900/40 border-transparent"
+                  }`}>
                     {pipelineLabels[s]}
                   </span>
                   {i < arr.length - 1 && <span className="text-zinc-200">→</span>}
@@ -466,9 +544,18 @@ export default function StudentDocumentView() {
         <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[480px] flex flex-col bg-white overflow-hidden shrink-0">
           {/* Mobile status pipeline */}
           <div className="block sm:hidden p-4 border-b border-zinc-100 bg-zinc-50/50">
-            <div className="flex items-center justify-between font-mono text-[8px] font-bold">
-              {(["DRAFT", "REVIEWING", "REVISION", "VALIDATED"] as const).map((s) => (
-                <span key={s} className={`px-2 py-1 border ${status === s ? "bg-zinc-900 text-white border-zinc-900" : "text-zinc-900/40 border-zinc-100"}`}>{s}</span>
+            <div className="flex items-center justify-between gap-1 font-mono text-[8px] font-bold flex-wrap">
+              {(transaction.mode === "HYBRID" 
+                ? ["DRAFT", "REVIEWING", "REVISION", "AWAITING_SCAN", "VALIDATED"] 
+                : ["DRAFT", "REVIEWING", "REVISION", "VALIDATED"]
+              ).map((s) => (
+                <span key={s} className={`px-1.5 py-0.5 border ${
+                  status === s 
+                    ? s === "VALIDATED" ? "bg-emerald-700 text-white border-emerald-700"
+                    : s === "AWAITING_SCAN" ? "bg-amber-600 text-white border-amber-600"
+                    : "bg-zinc-900 text-white border-zinc-900"
+                    : "text-zinc-900/40 border-zinc-100"
+                }`}>{pipelineLabels[s]}</span>
               ))}
             </div>
           </div>
@@ -489,7 +576,7 @@ export default function StudentDocumentView() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{transaction.admin?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className={docType === "Digital" ? "text-blue-600" : "text-amber-600"}>{docType.toUpperCase()}</span></span>
+                  <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{transaction.admin?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className={transaction.mode === "DIGITAL" ? "text-blue-600" : "text-amber-600"}>{transaction.mode}</span></span>
                 </div>
               </div>
             </div>
@@ -526,7 +613,7 @@ export default function StudentDocumentView() {
                   </div>
                 ))}
 
-                {status === "VALIDATED" && (
+                {status === "VALIDATED" && transaction.mode === "DIGITAL" && (
                   <div className="text-emerald-600 font-bold flex gap-3">
                     <span className="shrink-0">[SYS]</span>
                     <span>SYSTEM: VALIDATION_CLEARED. ALL_PARAMETERS_SYNCED.</span>
@@ -614,69 +701,150 @@ export default function StudentDocumentView() {
                   </button>
                 </div>
               </div>
-            ) : status === "VALIDATED" ? (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <div className="relative group/btn-download">
-                  <div className="absolute -top-2 -left-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
-                  <div className="absolute -top-4 -left-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
-                  <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
-                  <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+            ) : (status === "VALIDATED" || status === "AWAITING_SCAN" || status === "COMPLETED") ? (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-4">
+                {/* ACTION_B: DOWNLOAD OFFICIAL SIGNED DOC (DIGITAL ONLY) */}
+                {transaction.mode === "DIGITAL" && (
+                  <div className="relative group/btn-download">
+                    <div className="absolute -top-2 -left-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                    <div className="absolute -top-4 -left-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                    <div className="absolute -bottom-2 -right-4 w-12 h-px bg-emerald-300 transition-all group-hover/btn-download:w-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
+                    <div className="absolute -bottom-4 -right-2 w-px h-12 bg-emerald-300 transition-all group-hover/btn-download:h-16 group-hover/btn-download:bg-emerald-400 hidden md:block" />
 
-                  {(() => {
-                    const signedFiles = (transaction?.files ?? []).filter(
-                      (f: any) => f.originalFileName?.startsWith("OFFICIAL_SIGNED")
-                    );
-                    const txShort = transaction?.id?.slice(-6) ?? "doc";
+                    {(() => {
+                      const signedFiles = (transaction?.files ?? []).filter(
+                        (f: any) => f.originalFileName?.startsWith("OFFICIAL_SIGNED")
+                      );
+                      const txShort = transaction?.id?.slice(-6) ?? "doc";
 
-                    if (signedFiles.length === 0) {
+                      if (!transaction.finalFileUrl && signedFiles.length === 0) {
+                        return (
+                          <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
+                            <Loader2 size={16} className="animate-spin" /> [ PROCESSING_SIGNED_PAYLOAD ]
+                          </button>
+                        );
+                      }
+
+                      const handleDownload = async () => {
+                        const allFiles = transaction?.files || [];
+                        const originalFiles = allFiles.filter(f => !f.originalFileName.startsWith("OFFICIAL_SIGNED"));
+                        
+                        const finalPayloads = originalFiles.map(orig => {
+                          const signed = allFiles.find(sf => sf.originalFileName === `OFFICIAL_SIGNED_${orig.originalFileName}`);
+                          return signed || orig;
+                        });
+
+                        if (finalPayloads.length === 1) {
+                          const a = document.createElement("a");
+                          a.href = `/api/blob/proxy?url=${encodeURIComponent(finalPayloads[0].fileUrl)}&filename=${encodeURIComponent(finalPayloads[0].originalFileName)}`;
+                          a.download = finalPayloads[0].originalFileName;
+                          a.click();
+                        } else if (finalPayloads.length > 1) {
+                          const JSZip = (await import("jszip")).default;
+                          const zip = new JSZip();
+                          await Promise.all(finalPayloads.map(async (file: any) => {
+                            const res = await fetch(`/api/blob/proxy?url=${encodeURIComponent(file.fileUrl)}`);
+                            const buf = await res.arrayBuffer();
+                            zip.file(file.originalFileName, buf);
+                          }));
+                          const zipBlob = await zip.generateAsync({ type: "blob" });
+                          const a = document.createElement("a");
+                          a.href = URL.createObjectURL(zipBlob);
+                          a.download = `OFFICIAL_BATCH_${txShort}.zip`;
+                          a.click();
+                          setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+                        } else if (transaction.finalFileUrl) {
+                          const a = document.createElement("a");
+                          a.href = transaction.finalFileUrl;
+                          a.download = `SIGNED_DOCUMENT_${txShort}.pdf`;
+                          a.click();
+                        }
+                      };
+
                       return (
-                        <button disabled className="w-full bg-zinc-100 text-zinc-400 border border-zinc-200 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 cursor-not-allowed transition-all relative z-10">
-                          <Loader2 size={16} className="animate-spin" /> [ PROCESSING_SIGNED_PAYLOAD ]
+                        <button
+                          onClick={handleDownload}
+                          className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
+                        >
+                          <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                          [ DOWNLOAD_FINAL_TRANSACTION_PAYLOAD ] ✓
                         </button>
                       );
-                    }
+                    })()}
+                  </div>
+                )}
 
-                    const handleDownload = async () => {
-                      if (signedFiles.length === 1) {
-                        const a = document.createElement("a");
-                        a.href = `/api/blob/proxy?url=${encodeURIComponent(signedFiles[0].fileUrl)}&filename=${encodeURIComponent(signedFiles[0].originalFileName)}`;
-                        a.download = signedFiles[0].originalFileName;
-                        a.click();
-                      } else {
-                        const JSZip = (await import("jszip")).default;
-                        const zip = new JSZip();
-                        // Fetch all files in parallel
-                        await Promise.all(signedFiles.map(async (file: any) => {
-                          const res = await fetch(`/api/blob/proxy?url=${encodeURIComponent(file.fileUrl)}`);
-                          const buf = await res.arrayBuffer();
-                          zip.file(file.originalFileName, buf);
-                        }));
-                        const zipBlob = await zip.generateAsync({ type: "blob" });
-                        const a = document.createElement("a");
-                        a.href = URL.createObjectURL(zipBlob);
-                        a.download = `OFFICIAL_SIGNED_${txShort}.zip`;
-                        a.click();
-                        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-                      }
-                    };
+                {/* ACTION_C: DOWNLOAD DISPOSISI SHEET (HYBRID + VALIDATED/AWAIT_SCAN) */}
+                {transaction.mode === "HYBRID" && (status === "VALIDATED" || status === "AWAITING_SCAN") && (
+                  <div className="relative group/btn-disposisi">
+                    <div className="absolute -top-2 -right-4 w-12 h-px bg-amber-300 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <div className="absolute -top-4 -right-2 w-px h-12 bg-amber-300 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/transactions/${txId}/disposisi`);
+                          if (!res.ok) throw new Error("Gagal mengambil disposisi");
+                          const data = await res.json();
+                          const { qrDataUrl, transaction: tx } = data;
+                          const win = window.open("", "_blank");
+                          if (!win) return;
+                          win.document.write(`
+                            <html>
+                              <head>
+                                <title>Disposisi - ${tx.documentType}</title>
+                                <style>
+                                  body { font-family: courier, monospace; padding: 40px; color: #111; }
+                                  .head { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+                                  .head h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; }
+                                  .info { margin-bottom: 30px; }
+                                  .info div { margin-bottom: 8px; font-size: 14px; }
+                                  .qr { text-align: center; margin-top: 50px; border: 1px solid #eee; padding: 20px; }
+                                  .qr img { width: 220px; }
+                                  @media print { .btn { display: none; } }
+                                </style>
+                              </head>
+                              <body>
+                                <div class="head">
+                                  <h1>HYDE - LEMBAR DISPOSISI</h1>
+                                  <p style="font-size: 10px; opacity: 0.6; margin-top: 4px;">SYSTEM_GENERATED_DOCUMENT // MODE: HYBRID</p>
+                                </div>
+                                <div class="info">
+                                  <div><strong>SESSION_ID:</strong> ${tx.id}</div>
+                                  <div><strong>DOCUMENT:</strong> ${tx.documentType}</div>
+                                  <div><strong>STUDENT:</strong> ${tx.student.name} (${tx.student.nim})</div>
+                                  <div><strong>ADMIN_DEST:</strong> ${tx.admin.destinationName}</div>
+                                  <div><strong>TIMESTAMP:</strong> ${new Date().toLocaleString()}</div>
+                                </div>
+                                <div class="qr">
+                                  <img src="${qrDataUrl}" />
+                                  <p style="font-size: 10px; margin-top: 15px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">&gt; SCAN_FOR_PHYSICAL_HANDOVER_VERIFICATION &lt;</p>
+                                </div>
+                                <div style="margin-top: 40px; font-size: 8px; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px;">
+                                  This is an automated manifestation. Please bring this sheet to the office along with your physical documents.
+                                </div>
+                                <script>window.onload = () => { window.print(); window.close(); }</script>
+                              </body>
+                            </html>
+                          `);
+                          win.document.close();
+                        } catch (err) {
+                          alert("Gagal memuat lembar disposisi.");
+                        }
+                      }}
+                      className="w-full bg-amber-600 text-white border border-amber-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-amber-700 active:bg-amber-800 transition-all relative z-10 group shadow-sm"
+                    >
+                      <QrCode size={16} className="group-hover:scale-110 transition-transform" />
+                      [ DOWNLOAD_DISPOSISI_SHEET ] ⇲
+                    </button>
+                  </div>
+                )}
 
-                    return (
-                      <button
-                        onClick={handleDownload}
-                        className="w-full bg-emerald-600 text-white border border-emerald-500 h-16 md:h-auto py-5 font-mono font-bold tracking-[0.2em] text-[10px] md:text-xs flex items-center justify-center gap-3 hover:bg-emerald-700 active:bg-emerald-800 transition-all relative z-10 group shadow-sm"
-                      >
-                        <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
-                        {signedFiles.length > 1
-                          ? `[ DOWNLOAD_ALL_SIGNED_ZIP (${signedFiles.length} FILES) ] ✓`
-                          : "[ DOWNLOAD_OFFICIAL_SIGNED_PDF ] ✓"}
-                      </button>
-                    );
-                  })()}
-                </div>
                 <div className="mt-5 p-4 border border-zinc-200 bg-zinc-50/50 flex items-center gap-3 shadow-inner">
-                  <div className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse" />
+                  <div className={`w-1.5 h-1.5 rounded-none ${status === "VALIDATED" ? "bg-emerald-500" : "bg-emerald-500 animate-pulse"}`} />
                   <p className="text-[9px] font-mono font-medium tracking-tight text-zinc-500 leading-tight">
-                    CRYPTOGRAPHIC_INTEGRITY_VERIFIED // SIGN_ID: 882-X0-HYDE-SEC
+                    {status === "VALIDATED" 
+                      ? (transaction.mode === "HYBRID" ? "PHYSICAL_VERIFICATION_COMPLETE // TRANSACTION_CLOSED" : "CRYPTOGRAPHIC_INTEGRITY_VERIFIED // TRANSACTION_CLOSED")
+                      : "CRYPTOGRAPHIC_INTEGRITY_VERIFIED // SIGN_ID: 882-X0-HYDE-SEC"}
                   </p>
                 </div>
               </div>

@@ -1,6 +1,7 @@
-import { DocumentStatus as PrismaDocumentStatus, Role } from "@prisma/client";
+import { DocumentStatus as PrismaDocumentStatus, TransactionMode as PrismaTransactionMode, Role } from "@prisma/client";
 
 export type DocumentStatus = PrismaDocumentStatus;
+export type TransactionMode = PrismaTransactionMode;
 
 export interface UserProfile {
   id: string;
@@ -18,8 +19,10 @@ export interface Transaction {
   id: string;
   documentType: string; // decrypted at app layer for involved users
   status: DocumentStatus;
+  mode: TransactionMode;
   createdAt: Date;
   completedAt?: Date | null;
+  scannedAt?: Date | null;
   studentId: string;
   adminId: string;
   

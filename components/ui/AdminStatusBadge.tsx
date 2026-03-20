@@ -8,7 +8,7 @@ interface AdminStatusBadgeProps {
 }
 
 const config: Record<
-    DocumentStatus,
+    string,
     { label: string; className: string; dotClass: string; animate?: boolean }
 > = {
     DRAFT: {
@@ -30,9 +30,15 @@ const config: Record<
         animate: true,
     },
     VALIDATED: {
-        label: "COMPLETED",
-        className: "bg-zinc-50 text-zinc-400 border border-zinc-200 shadow-none",
-        dotClass: "bg-zinc-300",
+        label: "VALIDATED",
+        className: "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-none",
+        dotClass: "bg-emerald-400",
+    },
+    AWAITING_SCAN: {
+        label: "AWAIT_SCAN",
+        className: "bg-amber-50 text-amber-700 border border-amber-300",
+        dotClass: "bg-amber-500",
+        animate: true,
     },
 };
 
