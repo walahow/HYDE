@@ -49,28 +49,14 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.nim = (user as any).nim;
+        token.id   = user.id;
+        token.nim  = (user as any).nim;
         token.role = (user as any).role;
+        token.name = user.name;
         console.log(`[JWT] New session for ID: ${token.id}, Role: ${token.role}`);
       }
-
-      if (!user || trigger === "update") {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, nim: true, name: true }
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.nim = dbUser.nim;
-          console.log(`[JWT] Refreshed data from DB for ID: ${token.id}`);
-        } else {
-          console.warn(`[JWT] Could not find user in DB for ID: ${token.id}`);
-        }
-      }
-
       return token;
     },
     async session({ session, token }) {
@@ -107,7 +93,9 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: "next-auth.session-token",
+      name: process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
       options: {
         httpOnly: true,
         secure:   process.env.NODE_ENV === "production",
