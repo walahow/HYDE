@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import type { DocumentStatus, TransactionMode } from "@/lib/types";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
   ssr: false,
@@ -58,7 +59,7 @@ interface TransactionDetail {
 
 type DocType = "Digital" | "Hybrid";
 
-export default function StudentDocumentView() {
+function StudentDocumentViewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const txId = searchParams.get("txId");
@@ -863,5 +864,17 @@ export default function StudentDocumentView() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function StudentDocumentView() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-[#f5f5f7] font-mono text-zinc-400 text-sm animate-pulse">
+        LOADING_STUDENT_PANEL...
+      </div>
+    }>
+      <StudentDocumentViewContent />
+    </Suspense>
   );
 }

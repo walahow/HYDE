@@ -8,7 +8,7 @@ import { generateVerificationQR } from "@/lib/qrcode";
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Only authenticated users can generate/view the QR for now

@@ -1,0 +1,62 @@
+﻿
+> hyde@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+node.exe : ΓÜá The "middleware" file 
+convention is deprecated. Please use 
+"proxy" instead. Learn more: https://nextjs.
+org/docs/messages/middleware-to-proxy
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+(    ΓÜá The 
+"middle...leware-to-proxy:String)     [], 
+RemoteException
+    + FullyQualifiedErrorId : 
+NativeCommandEr    ror
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 7.5s
+  Running TypeScript ...
+Failed to compile.
+
+.next/dev/types/validator.ts:117:31
+Type error: Type 'typeof import("C:/Users/la
+tif/Documents/Project/HYDE/app/student/docum
+ent-view/page")' does not satisfy the 
+constraint 
+'AppPageConfig<"/student/document-view">'.
+  Property 'default' is missing in type 
+'typeof import("C:/Users/latif/Documents/Pro
+ject/HYDE/app/student/document-view/page")' 
+but required in type 
+'AppPageConfig<"/student/document-view">'.
+
+[0m [90m 115 |[39m   type 
+__IsExpected[33m<[39m[33mSpecific[39m 
+[36mextends[39m [33mAppPageConfig[39m[3
+3m<[39m[32m"/student/document-view"[39m[
+33m>>[39m [33m=[39m [33mSpecific[39m
+ [90m 116 |[39m   [36mconst[39m handler 
+[33m=[39m {} [36mas[39m 
+[36mtypeof[39m [36mimport[39m([32m"../.
+./../app/student/document-view/page.js"[39m
+)
+[31m[1m>[22m[39m[90m 117 |[39m   type 
+__Check [33m=[39m 
+__IsExpected[33m<[39m[36mtypeof[39m 
+handler[33m>[39m
+ [90m     |[39m                           
+    [31m[1m^[22m[39m
+ [90m 118 |[39m   [90m// @ts-ignore[39m
+ [90m 119 |[39m   type __Unused 
+[33m=[39m __Check
+ [90m 120 |[39m }[0m
+Next.js build worker exited with code: 1 
+and signal: null

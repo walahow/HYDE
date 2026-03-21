@@ -28,6 +28,7 @@ import type { DocumentStatus } from "@/lib/types";
 import { bakeMultipleSignatures, type PlacedSignature } from "@/lib/pdf-utils";
 import JSZip from "jszip";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 const DocumentCanvas = dynamic(() => import("@/components/ui/DocumentCanvas"), {
   ssr: false,
@@ -44,7 +45,7 @@ type TxMode = "DIGITAL" | "HYBRID";
 // Admin ID — replace with session once auth is implemented
 const ADMIN_ID = "69b6cd888d2d340d5984ce5c";
 
-export default function AdminDocumentView() {
+function AdminDocumentViewContent() {
   const searchParams = useSearchParams();
   const txId = searchParams.get("txId");
 
@@ -736,5 +737,17 @@ export default function AdminDocumentView() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AdminDocumentView() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-[#f5f5f7] font-mono text-zinc-400 text-sm animate-pulse">
+        LOADING_ADMIN_PANEL...
+      </div>
+    }>
+      <AdminDocumentViewContent />
+    </Suspense>
   );
 }

@@ -1,0 +1,73 @@
+﻿
+> hyde@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+node.exe : ΓÜá The "middleware" file 
+convention is deprecated. Please use 
+"proxy" instead. Learn more: https://nextjs.
+org/docs/messages/middleware-to-proxy
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    (ΓÜá The "middle...leware-to-proxy:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 6.1s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/16) ...
+Γ¿» useSearchParams() should be wrapped in 
+a suspense boundary at page 
+"/admin/document-view". Read more: https://n
+extjs.org/docs/messages/missing-suspense-wit
+h-csr-bailout
+    at Q (C:\Users\latif\Documents\Project\H
+YDE\.next\server\chunks\ssr\node_modules_455
+98cbe._.js:2:2111)
+    at o (C:\Users\latif\Documents\Project\H
+YDE\.next\server\chunks\ssr\node_modules_455
+98cbe._.js:4:5284)
+    at hh (C:\Users\latif\Documents\Project\
+HYDE\.next\server\chunks\ssr\_721ce1fd._.js:
+1:259208)
+    at an (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:84360)
+    at ai (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:86179)
+    at al (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:107953
+)
+    at as (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:105368
+)
+    at aa (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:84712)
+    at ai (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:86228)
+    at ai (C:\Users\latif\Documents\Project\
+HYDE\node_modules\next\dist\compiled\next-se
+rver\app-page-turbo.runtime.prod.js:2:104708
+)
+Error occurred prerendering page 
+"/admin/document-view". Read more: https://n
+extjs.org/docs/messages/prerender-error
+Export encountered an error on 
+/admin/document-view/page: 
+/admin/document-view, exiting the build.
+Γ¿» Next.js build worker exited with code: 
+1 and signal: null

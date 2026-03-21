@@ -1,0 +1,46 @@
+﻿
+> hyde@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+node.exe : ΓÜá The "middleware" file 
+convention is deprecated. Please use 
+"proxy" instead. Learn more: https://nextjs.
+org/docs/messages/middleware-to-proxy
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    (ΓÜá The "middle...leware-to-proxy:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 5.6s
+  Running TypeScript ...
+Failed to compile.
+
+./lib/dummy-data.ts:1:15
+Type error: Module '"./types"' has no 
+exported member 'Destination'.
+
+[0m[31m[1m>[22m[39m[90m 1 |[39m 
+[36mimport[39m type { 
+[33mDestination[39m[33m,[39m 
+[33mStudentDocument[39m[33m,[39m 
+[33mAdminDocument[39m } [36mfrom[39m 
+[32m"./types"[39m[33m;[39m
+ [90m   |[39m               
+[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m [36mexport[39m 
+[36mconst[39m destinations[33m:[39m 
+[33mDestination[39m[] [33m=[39m [
+ [90m 4 |[39m     {[0m
+Next.js build worker exited with code: 1 
+and signal: null

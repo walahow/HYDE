@@ -3,6 +3,36 @@ import { DocumentStatus as PrismaDocumentStatus, TransactionMode as PrismaTransa
 export type DocumentStatus = PrismaDocumentStatus;
 export type TransactionMode = PrismaTransactionMode;
 
+export interface Destination {
+  id: string;
+  categoryCode: string;
+  name: string;
+  faculty: string;
+  description: string;
+  documentCount: number;
+  status: "open" | "closed";
+  acceptedDocuments: string[];
+}
+
+export interface StudentDocument {
+  id: string;
+  destinationName: string;
+  documentType: string;
+  submittedAt: string;
+  status: string;
+  trackingId: string;
+}
+
+export interface AdminDocument {
+  id: string;
+  studentName: string;
+  nim: string;
+  documentType: string;
+  submittedAt: string;
+  status: string;
+  trackingId: string;
+}
+
 export interface UserProfile {
   id: string;
   autoId: number;

@@ -3,7 +3,7 @@ import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import { CheckCircle2, XCircle, Clock, Fingerprint, QrCode } from "lucide-react";
 import { notFound } from "next/navigation";
 
-export default async function VerificationPage({ params }: { params: { id: string } }) {
+export default async function VerificationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const transaction = await prisma.transaction.findUnique({
