@@ -81,7 +81,10 @@ export default function LoginPage() {
                             className="bg-red-50 border border-red-200 p-3 flex items-start gap-3"
                         >
                             <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={14} />
-                            <p className="text-[10px] font-mono text-red-600 uppercase leading-relaxed">
+                            <p
+                                data-testid="error-message"
+                                className="text-[10px] font-mono text-red-600 uppercase leading-relaxed"
+                            >
                                 {error}
                             </p>
                         </motion.div>
@@ -95,6 +98,7 @@ export default function LoginPage() {
                                 <User size={16} />
                             </div>
                             <input
+                                data-testid="nim-input"
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
@@ -114,6 +118,7 @@ export default function LoginPage() {
                                 <Lock size={16} />
                             </div>
                             <input
+                                data-testid="password-input"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -126,6 +131,7 @@ export default function LoginPage() {
 
                     <div className="pt-4">
                         <button
+                            data-testid="submit-button"
                             type="submit"
                             disabled={isLoading}
                             className="relative w-full h-12 bg-zinc-900 text-white font-mono text-sm uppercase tracking-[0.2em] flex items-center justify-center group overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"

@@ -1,25 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { DocumentStatus, TransactionMode } from "@prisma/client";
+import { DocumentStatus } from "@prisma/client";
 import { requireAuth } from "@/lib/auth";
-
-// Valid status transitions per mode
-const ALLOWED_TRANSITIONS: Record<
-  TransactionMode,
-  Partial<Record<DocumentStatus, DocumentStatus[]>>
-> = {
-  DIGITAL: {
-    DRAFT:     ["REVIEWING"],
-    REVIEWING: ["REVISION", "VALIDATED"],
-    REVISION:  ["REVIEWING"],
-  },
-  HYBRID: {
-    DRAFT:         ["REVIEWING"],
-    REVIEWING:     ["REVISION", "AWAITING_SCAN"],
-    AWAITING_SCAN: ["VALIDATED"],
-    REVISION:      ["REVIEWING"],
-  },
-};
+import { ALLOWED_TRANSITIONS } from "@/lib/validate-transition";
 
 // PATCH /api/transactions/[id]/status
 // Body: { toStatus: DocumentStatus, note?: string, finalFileUrl?: string }
