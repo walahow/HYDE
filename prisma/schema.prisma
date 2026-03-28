@@ -24,12 +24,14 @@ enum TransactionMode {
 // REVISION      → admin requests changes from student
 // AWAITING_SCAN → HYBRID only: admin approved, waiting for physical QR scan
 // VALIDATED     → terminal: fully signed (DIGITAL) or QR scanned (HYBRID)
+// COMPLETED     → legacy alias for VALIDATED (kept for backward DB compatibility)
 enum DocumentStatus {
   DRAFT
   REVIEWING
   REVISION
   AWAITING_SCAN
   VALIDATED
+  COMPLETED
 }
 
 model User {
