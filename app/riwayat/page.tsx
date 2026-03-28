@@ -35,10 +35,18 @@ export default function RiwayatMahasiswaPage() {
         async function fetchTransactions() {
             try {
                 const res = await fetch(`/api/transactions`);
-                const data: Transaction[] = await res.json();
-                setTransactions(data);
+                if (!res.ok) {
+                    const errBody = await res.json().catch(() => ({}));
+                    console.error("Failed to fetch transactions:", res.status, errBody);
+                    setTransactions([]);
+                    return;
+                }
+                const data = await res.json();
+                // Guard: API must return an array
+                setTransactions(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error("Failed to fetch transactions:", err);
+                setTransactions([]);
             } finally {
                 setLoading(false);
             }

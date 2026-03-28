@@ -24,6 +24,7 @@ export async function GET() {
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     if (error.message === "FORBIDDEN") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    console.error("[GET /api/transactions] Unhandled error:", error);
     return NextResponse.json({ message: "Internal Server Error", error: error.message }, { status: 500 });
   }
 }
