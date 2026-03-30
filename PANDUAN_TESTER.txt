@@ -1,0 +1,174 @@
+================================================================
+         PANDUAN TESTING — SISTEM HYDE
+         (Dokumen Internal — Jangan Disebarluaskan)
+================================================================
+
+HYDE = Hybrid & Digital Document Exchange System
+Versi Panduan : 1.0
+Tanggal       : 30 Maret 2026
+
+
+================================================================
+ 1. URL AKSES
+================================================================
+
+  Production (Vercel) : https://hyde-six.vercel.app/
+
+
+================================================================
+ 2. KREDENSIAL LOGIN
+================================================================
+
+-- AKUN MAHASISWA --
+
+  Nama           : Ahmad Fauzan
+  NIM (username) : H1101221001
+  Password       : password123
+
+  Nama           : Siti Rahmawati
+  NIM (username) : H1101221042
+  Password       : password123
+
+
+-- AKUN ADMIN --
+
+  Nama           : Admin LPPM
+  ID (username)  : ADM-001
+  Password       : password123
+  Tujuan         : Lembaga Penelitian dan Pengabdian (LPPM)
+  Status         : TERBUKA  <-- Gunakan akun ini untuk testing penuh
+
+  Nama           : Admin Dekanat MIPA
+  ID (username)  : ADM-003
+  Password       : password123
+  Tujuan         : Dekanat Fakultas MIPA
+  Status         : TUTUP  <-- Mahasiswa tidak bisa submit ke sini
+
+
+================================================================
+ 3. PETA HALAMAN SISTEM
+================================================================
+
+  /login                            --> Halaman login (semua user)
+  /                                 --> Dashboard mahasiswa (daftar tujuan)
+  /riwayat                          --> Riwayat transaksi mahasiswa
+  /student/document-view?txId=...   --> Detail transaksi (sisi mahasiswa)
+  /admin                            --> Inbox admin (dokumen masuk)
+  /admin/riwayat                    --> Riwayat semua transaksi (admin)
+  /admin/document-view?txId=...     --> Workspace review dokumen
+  /admin/scan                       --> Scanner QR untuk mode Hybrid
+  /v/[txId]                         --> Konfirmasi scan QR (halaman publik)
+
+
+================================================================
+ 4. SKENARIO TESTING
+================================================================
+
+----------------------------------------------------------------
+ SKENARIO 1 — ALUR DIGITAL (End-to-End)
+----------------------------------------------------------------
+
+LANGKAH MAHASISWA:
+  1. Login dengan akun mahasiswa (H1101221001 / password)
+  2. Di dashboard, pilih kartu tujuan yang berstatus OPEN
+     (contoh: LPPM)
+  3. Klik tombol Submit Dokumen
+  4. Pilih mode : DIGITAL
+  5. Isi jenis dokumen dan unggah file PDF
+  6. Klik Submit
+     --> Status transaksi: DRAFT
+
+LANGKAH ADMIN:
+  7. Login sebagai Admin LPPM (ADM-001 / password)
+  8. Di halaman /admin (Inbox), cari transaksi yang masuk
+  9. Klik tombol [OPEN_WORKSPACE]
+     --> Status otomatis berubah: DRAFT --> REVIEWING
+ 10. (Opsional) Upload file tanda tangan (PNG/JPG, maks 1MB)
+     lalu drag ke posisi yang diinginkan di atas dokumen
+ 11. Klik tombol [VALIDATE_AND_ACCEPT_PAYLOAD]
+     --> Status berubah: REVIEWING --> VALIDATED
+
+VERIFIKASI MAHASISWA:
+ 12. Login kembali sebagai mahasiswa
+ 13. Buka halaman /riwayat
+ 14. Pastikan transaksi tampil dengan status: VALIDATED
+
+
+----------------------------------------------------------------
+ SKENARIO 2 — ALUR HYBRID (End-to-End dengan QR Code)
+----------------------------------------------------------------
+
+LANGKAH MAHASISWA:
+  1. Login sebagai mahasiswa (H1101221001 / password)
+  2. Pilih tujuan LPPM di dashboard
+  3. Submit dokumen, pilih mode : HYBRID
+  4. Unggah file PDF --> klik Submit
+     --> Status transaksi: DRAFT
+
+LANGKAH ADMIN:
+  5. Login sebagai Admin LPPM (ADM-001 / password)
+  6. Buka transaksi dari inbox
+     --> Status otomatis berubah: DRAFT --> REVIEWING
+  7. Klik tombol [APPROVE_FOR_PHYSICAL_SCAN]
+     --> Status berubah: REVIEWING --> AWAITING_SCAN
+  8. Klik tombol [CETAK_DISPOSISI]
+     --> Halaman print terbuka dengan QR Code
+  9. Print atau screenshot QR Code tersebut
+
+LANGKAH SCAN QR:
+ 10. Buka halaman /admin/scan (gunakan kamera perangkat)
+     ATAU akses URL yang ada di dalam QR secara langsung
+     --> Status berubah: AWAITING_SCAN --> VALIDATED
+
+VERIFIKASI MAHASISWA:
+ 11. Login kembali sebagai mahasiswa --> buka /riwayat
+ 12. Pastikan transaksi berstatus: VALIDATED
+
+
+----------------------------------------------------------------
+ SKENARIO 3 — REVISI DOKUMEN
+----------------------------------------------------------------
+
+  1. Mahasiswa submit dokumen (mode Digital atau Hybrid)
+  2. Admin buka workspace dari inbox
+     --> Status: REVIEWING
+  3. (Opsional) Isi catatan revisi di kolom terminal
+  4. Klik tombol [DISPATCH_REVISION_COMMAND]
+     --> Status berubah: REVIEWING --> REVISION
+  5. Mahasiswa buka halaman detail transaksi
+  6. Upload dokumen revisi
+     --> Status kembali ke: DRAFT
+  7. Admin bisa mereview ulang dari inbox
+
+
+================================================================
+ 5. STATUS LIFECYCLE
+================================================================
+
+  DRAFT
+    --> REVIEWING       (admin membuka dokumen)
+        --> REVISION    (admin minta revisi) --> kembali ke DRAFT
+        --> VALIDATED   (divalidasi, mode Digital)
+        --> AWAITING_SCAN --> VALIDATED  (mode Hybrid, setelah scan QR)
+
+
+================================================================
+ 6. CATATAN PENTING
+================================================================
+
+  [!] File dokumen yang diunggah harus berformat PDF
+  [!] File tanda tangan harus PNG atau JPG, maksimal 1 MB
+  [!] Admin ADM-003 berstatus TUTUP — tidak bisa menerima dokumen
+  [!] Saat admin membuka transaksi, status DRAFT otomatis
+      berubah ke REVIEWING tanpa tombol tambahan
+  [!] Scan QR Hybrid bisa dilakukan dari halaman /admin/scan
+      menggunakan kamera perangkat
+  [!] Login dilindungi rate limiter — jangan mencoba login
+      berulang kali dalam waktu singkat
+  [!] Semua data tersimpan di MongoDB Atlas (cloud) —
+      pastikan koneksi internet aktif saat testing
+
+
+================================================================
+ Pertanyaan? Hubungi pengembang sistem.
+================================================================

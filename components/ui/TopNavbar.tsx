@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Power, Building2, LayoutDashboard, History, QrCode } from "lucide-react";
+import { ChevronDown, Power, Building2, LayoutDashboard, History, QrCode, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
 
@@ -49,14 +49,11 @@ export default function TopNavbar() {
     }, []);
 
     const isOnRiwayat = pathname.endsWith("/riwayat");
+    const isOnDashboard = pathname === "/" || pathname === "/admin";
     if (!user) return null;
 
     const dashboardHref = user.role === "ADMIN" ? "/admin" : "/";
     const riwayatHref = user.role === "ADMIN" ? "/admin/riwayat" : "/riwayat";
-
-    const centerLink = isOnRiwayat
-        ? { href: dashboardHref, label: "DASHBOARD", Icon: LayoutDashboard }
-        : { href: riwayatHref, label: "HISTORY", Icon: History };
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
@@ -79,16 +76,45 @@ export default function TopNavbar() {
                     </div>
                 </div>
 
-                {/* Center: Context-aware nav link - Full width on mobile */}
-                <div className="flex items-center justify-center w-full md:w-auto">
-                    <Link
-                        href={centerLink.href}
-                        className="group flex items-center justify-center gap-1.5 rounded-none w-full md:w-auto px-4 h-11 md:h-9 text-sm md:text-base font-light font-mono text-zinc-500 transition-colors hover:bg-black hover:text-white border border-zinc-100 md:border-none"
-                    >
-                        <span>[ DIR:</span>
-                        {centerLink.Icon && <centerLink.Icon size={14} className="text-zinc-400 group-hover:text-white transition-colors" />}
-                        <span>{centerLink.label} ]</span>
-                    </Link>
+                {/* Center: Dual nav links — always visible */}
+                <div className="flex items-center justify-center gap-1 w-full md:w-auto">
+                    {/* DASHBOARD */}
+                    {isOnDashboard ? (
+                        <span className="flex items-center gap-1.5 px-3 h-9 font-mono font-bold text-[11px] bg-zinc-900 text-white border border-zinc-900">
+                            <LayoutDashboard size={12} />
+                            DASHBOARD
+                            <ArrowUpRight size={11} className="opacity-0" />
+                        </span>
+                    ) : (
+                        <Link
+                            href={dashboardHref}
+                            className="group flex items-center gap-1.5 px-3 h-9 font-mono font-light text-[11px] text-zinc-500 border border-zinc-200 transition-colors hover:bg-zinc-900 hover:text-white hover:border-zinc-900"
+                        >
+                            <LayoutDashboard size={12} className="group-hover:text-white transition-colors" />
+                            DASHBOARD
+                            <ArrowUpRight size={11} className="text-zinc-400 group-hover:text-white transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </Link>
+                    )}
+
+                    <span className="text-zinc-200 font-mono text-[10px] hidden md:block">/</span>
+
+                    {/* HISTORY */}
+                    {isOnRiwayat ? (
+                        <span className="flex items-center gap-1.5 px-3 h-9 font-mono font-bold text-[11px] bg-zinc-900 text-white border border-zinc-900">
+                            <History size={12} />
+                            HISTORY
+                            <ArrowUpRight size={11} className="opacity-0" />
+                        </span>
+                    ) : (
+                        <Link
+                            href={riwayatHref}
+                            className="group flex items-center gap-1.5 px-3 h-9 font-mono font-light text-[11px] text-zinc-500 border border-zinc-200 transition-colors hover:bg-zinc-900 hover:text-white hover:border-zinc-900"
+                        >
+                            <History size={12} className="group-hover:text-white transition-colors" />
+                            HISTORY
+                            <ArrowUpRight size={11} className="text-zinc-400 group-hover:text-white transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </Link>
+                    )}
                 </div>
 
                 {/* Right: Actions + Profile dropdown (Desktop Only) */}

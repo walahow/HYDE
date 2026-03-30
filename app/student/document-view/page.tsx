@@ -259,144 +259,156 @@ function StudentDocumentViewContent() {
           </div>
 
           <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[480px] flex flex-col bg-white overflow-hidden shrink-0">
-            <div className="p-6 md:p-8 border-b border-zinc-100">
-              <Link href="/" className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 transition-colors mb-6 font-mono text-[10px] group/back">
-                <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
-                <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK_TO_DASHBOARD</span>
-              </Link>
-              <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_DESTINATION</h2>
-              <div className="p-4 relative z-0 border border-zinc-50">
-                <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
-                <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
-                <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
-                <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
-                
-                <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
-                  <div className="flex items-center gap-3">
-                    <User size={14} className="text-zinc-400 shrink-0" />
-                    <span className="text-zinc-900 font-bold truncate">&gt; NAME: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{adminInfo?.name ?? "Loading..."}</span></span>
+            {/* Scrollable form content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 md:p-8 border-b border-zinc-100">
+                <Link href="/" className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 transition-colors mb-6 font-mono text-[10px] group/back">
+                  <ArrowLeft size={14} className="group-hover/back:-translate-x-0.5 transition-transform" />
+                  <span className="font-bold underline decoration-zinc-200 underline-offset-4">BACK_TO_DASHBOARD</span>
+                </Link>
+                <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-5">// TRANSMISSION_DESTINATION</h2>
+                <div className="p-4 relative z-0 border border-zinc-50">
+                  <div className="absolute top-0 -left-4 -right-2 h-px bg-zinc-300 z-10" />
+                  <div className="absolute -top-4 -bottom-2 left-0 w-px bg-zinc-300 z-10" />
+                  <div className="absolute -top-2 -bottom-4 right-0 w-px bg-zinc-300 z-10" />
+                  <div className="absolute bottom-0 -left-2 -right-4 h-px bg-zinc-300 z-10" />
+                  
+                  <div className="space-y-3 md:space-y-2 font-mono text-[11px] md:text-xs">
+                    <div className="flex items-center gap-3">
+                      <User size={14} className="text-zinc-400 shrink-0" />
+                      <span className="text-zinc-900 font-bold truncate">&gt; NAME: <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{adminInfo?.name ?? "Loading..."}</span></span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Fingerprint size={14} className="text-zinc-400 shrink-0" />
+                      <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className={transactionMode === "DIGITAL" ? "text-blue-600" : "text-amber-600"}>{transactionMode}</span></span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Fingerprint size={14} className="text-zinc-400 shrink-0" />
-                    <span className="text-zinc-900 font-bold break-all md:break-normal">&gt; ID: <span className="text-zinc-600">{adminInfo?.id?.slice(-8).toUpperCase() ?? "--------"}</span> // TYPE: <span className={transactionMode === "DIGITAL" ? "text-blue-600" : "text-amber-600"}>{transactionMode}</span></span>
+                </div>
+              </div>
+
+              <div className="p-6 md:p-8">
+                <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4">// NEW_TRANSMISSION_INIT</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">DOCUMENT_TYPE *</label>
+                    <input
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                      placeholder="e.g. Surat Pengantar KRS"
+                      className="w-full rounded-none border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all"
+                    />
+                  </div>
+
+                  {/* Drag and Drop Zone */}
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">ATTACH_PAYLOAD *</label>
+                    <div
+                      onDragOver={onDragOver}
+                      onDragLeave={onDragLeave}
+                      onDrop={onDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed p-6 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group min-h-[120px] ${
+                        isDragging ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white hover:border-zinc-400"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={onFileSelect}
+                        className="hidden"
+                      />
+                      {attachedFile ? (
+                        <>
+                          <FileText size={24} className="text-zinc-900" />
+                          <div className="text-center">
+                            <p className="font-mono text-[9px] font-bold text-zinc-900 uppercase truncate max-w-[200px]">{attachedFile.name}</p>
+                            <p className="font-mono text-[8px] text-zinc-400 uppercase tracking-widest">{(attachedFile.size / 1024 / 1024).toFixed(2)} MB // READY</p>
+                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setAttachedFile(null); }}
+                            className="text-[8px] font-mono font-bold text-red-500 hover:text-red-700 underline underline-offset-2 mt-1"
+                          >
+                            [ REMOVE_PAYLOAD ]
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={24} className="text-zinc-200 group-hover:text-zinc-400 transition-colors" />
+                          <p className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] text-zinc-400 group-hover:text-zinc-600 transition-colors uppercase text-center">
+                            {isDragging ? "[ RELEASE_TO_ATTACH ]" : "[ DRAG_OR_CLICK_TO_ATTACH ]"}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* MODE SELECTOR */}
+                  <div>
+                    <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">TRANSACTION_MODE</label>
+                    <div className="grid grid-cols-2 gap-0 border border-zinc-200">
+                      <button
+                        type="button"
+                        onClick={() => setTransactionMode("DIGITAL")}
+                        className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all border-r border-zinc-200 flex flex-col items-center gap-1 ${
+                          transactionMode === "DIGITAL"
+                            ? "bg-zinc-900 text-white"
+                            : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
+                        }`}
+                      >
+                        <span className={`text-[8px] font-mono tracking-[0.15em] ${
+                          transactionMode === "DIGITAL" ? "text-blue-400" : "text-zinc-300"
+                        }`}>◈ MODE_A</span>
+                        DIGITAL
+                        <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
+                          transactionMode === "DIGITAL" ? "text-zinc-400" : "text-zinc-300"
+                        }`}>E-signature only</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTransactionMode("HYBRID")}
+                        className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all flex flex-col items-center gap-1 ${
+                          transactionMode === "HYBRID"
+                            ? "bg-zinc-900 text-white"
+                            : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
+                        }`}
+                      >
+                        <span className={`text-[8px] font-mono tracking-[0.15em] ${
+                          transactionMode === "HYBRID" ? "text-amber-400" : "text-zinc-300"
+                        }`}>◈ MODE_B</span>
+                        HYBRID
+                        <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
+                          transactionMode === "HYBRID" ? "text-zinc-400" : "text-zinc-300"
+                        }`}>E-sign + physical scan</span>
+                      </button>
+                    </div>
+                    {transactionMode === "HYBRID" && (
+                      <div className="mt-2 flex items-start gap-2 font-mono text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2">
+                        <span className="shrink-0 mt-px">⚠</span>
+                        <span>Requires physical QR scan at the office after admin approval. Document will not be closed until scanned.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 md:p-8 border-b border-zinc-100">
-              <h2 className="text-[10px] font-mono font-bold text-zinc-400 tracking-[0.3em] mb-4">// NEW_TRANSMISSION_INIT</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">DOCUMENT_TYPE *</label>
-                  <input
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    placeholder="e.g. Surat Pengantar KRS"
-                    className="w-full rounded-none border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all"
-                  />
+            {/* Sticky bottom action bar — always visible, glued to the bottom edge */}
+            <div className="p-6 md:p-8 bg-zinc-50/50 border-t border-zinc-100 shrink-0">
+              {submitError && (
+                <div className="flex items-center gap-2 text-red-600 font-mono text-[10px] mb-4">
+                  <AlertCircle size={12} />
+                  {submitError}
                 </div>
-
-                {/* Drag and Drop Zone */}
-                <div>
-                  <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">ATTACH_PAYLOAD *</label>
-                  <div
-                    onDragOver={onDragOver}
-                    onDragLeave={onDragLeave}
-                    onDrop={onDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed p-6 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group min-h-[120px] ${
-                      isDragging ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white hover:border-zinc-400"
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={onFileSelect}
-                      className="hidden"
-                    />
-                    {attachedFile ? (
-                      <>
-                        <FileText size={24} className="text-zinc-900" />
-                        <div className="text-center">
-                          <p className="font-mono text-[9px] font-bold text-zinc-900 uppercase truncate max-w-[200px]">{attachedFile.name}</p>
-                          <p className="font-mono text-[8px] text-zinc-400 uppercase tracking-widest">{(attachedFile.size / 1024 / 1024).toFixed(2)} MB // READY</p>
-                        </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setAttachedFile(null); }}
-                          className="text-[8px] font-mono font-bold text-red-500 hover:text-red-700 underline underline-offset-2 mt-1"
-                        >
-                          [ REMOVE_PAYLOAD ]
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={24} className="text-zinc-200 group-hover:text-zinc-400 transition-colors" />
-                        <p className="font-mono text-[8px] md:text-[9px] font-bold tracking-[0.2em] md:tracking-[0.3em] text-zinc-400 group-hover:text-zinc-600 transition-colors uppercase text-center">
-                          {isDragging ? "[ RELEASE_TO_ATTACH ]" : "[ DRAG_OR_CLICK_TO_ATTACH ]"}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* MODE SELECTOR */}
-                <div>
-                  <label className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest mb-2 block">TRANSACTION_MODE</label>
-                  <div className="grid grid-cols-2 gap-0 border border-zinc-200">
-                    <button
-                      type="button"
-                      onClick={() => setTransactionMode("DIGITAL")}
-                      className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all border-r border-zinc-200 flex flex-col items-center gap-1 ${
-                        transactionMode === "DIGITAL"
-                          ? "bg-zinc-900 text-white"
-                          : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
-                      }`}
-                    >
-                      <span className={`text-[8px] font-mono tracking-[0.15em] ${
-                        transactionMode === "DIGITAL" ? "text-blue-400" : "text-zinc-300"
-                      }`}>◈ MODE_A</span>
-                      DIGITAL
-                      <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
-                        transactionMode === "DIGITAL" ? "text-zinc-400" : "text-zinc-300"
-                      }`}>E-signature only</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTransactionMode("HYBRID")}
-                      className={`relative py-3 px-4 font-mono font-bold text-[10px] tracking-widest uppercase transition-all flex flex-col items-center gap-1 ${
-                        transactionMode === "HYBRID"
-                          ? "bg-zinc-900 text-white"
-                          : "bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
-                      }`}
-                    >
-                      <span className={`text-[8px] font-mono tracking-[0.15em] ${
-                        transactionMode === "HYBRID" ? "text-amber-400" : "text-zinc-300"
-                      }`}>◈ MODE_B</span>
-                      HYBRID
-                      <span className={`text-[7px] font-normal tracking-normal leading-tight text-center ${
-                        transactionMode === "HYBRID" ? "text-zinc-400" : "text-zinc-300"
-                      }`}>E-sign + physical scan</span>
-                    </button>
-                  </div>
-                  {transactionMode === "HYBRID" && (
-                    <div className="mt-2 flex items-start gap-2 font-mono text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2">
-                      <span className="shrink-0 mt-px">⚠</span>
-                      <span>Requires physical QR scan at the office after admin approval. Document will not be closed until scanned.</span>
-                    </div>
-                  )}
-                </div>
-
-                {submitError && (
-                  <div className="flex items-center gap-2 text-red-600 font-mono text-[10px]">
-                    <AlertCircle size={12} />
-                    {submitError}
-                  </div>
-                )}
+              )}
+              <div className="relative group/btn">
+                <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                <div className="absolute -bottom-2 -right-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                <div className="absolute -bottom-4 -right-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                 <button
                   disabled={!documentType.trim() || !attachedFile || submitting || !destId}
                   onClick={handleSubmit}
-                  className="w-full bg-white text-zinc-900 border border-zinc-200 py-4 font-mono font-bold tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full bg-white text-zinc-900 border border-zinc-200 h-14 md:h-auto py-4 font-mono font-bold tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-zinc-900 hover:text-white active:bg-zinc-800 transition-all relative z-10 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting ? "TRANSMITTING..." : <>TRANSMIT_INITIAL_PACK <ArrowUpRight size={14} /></>}
                 </button>
@@ -693,6 +705,8 @@ function StudentDocumentViewContent() {
                 <div className="relative group/btn">
                   <div className="absolute -top-2 -left-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                   <div className="absolute -top-4 -left-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                  <div className="absolute -bottom-2 -right-4 w-12 h-px bg-zinc-300 transition-all group-hover/btn:w-16 group-hover/btn:bg-zinc-400 hidden md:block" />
+                  <div className="absolute -bottom-4 -right-2 w-px h-12 bg-zinc-300 transition-all group-hover/btn:h-16 group-hover/btn:bg-zinc-400 hidden md:block" />
                   <button
                     disabled={transmitting || (!attachedFile && !studentReply.trim())}
                     onClick={transmitRevision}
@@ -778,8 +792,10 @@ function StudentDocumentViewContent() {
                 {/* ACTION_C: DOWNLOAD DISPOSISI SHEET (HYBRID + VALIDATED/AWAIT_SCAN) */}
                 {transaction.mode === "HYBRID" && (status === "VALIDATED" || status === "AWAITING_SCAN") && (
                   <div className="relative group/btn-disposisi">
-                    <div className="absolute -top-2 -right-4 w-12 h-px bg-amber-300 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
-                    <div className="absolute -top-4 -right-2 w-px h-12 bg-amber-300 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <div className="absolute -top-2 -left-4 w-12 h-px bg-amber-300 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <div className="absolute -top-4 -left-2 w-px h-12 bg-amber-300 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <div className="absolute -bottom-2 -right-4 w-12 h-px bg-amber-300 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                    <div className="absolute -bottom-4 -right-2 w-px h-12 bg-amber-300 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
                     <button
                       onClick={async () => {
                         try {

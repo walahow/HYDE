@@ -637,6 +637,8 @@ function AdminDocumentViewContent() {
               <div className="relative group/btn-disposisi">
                 <div className="absolute -top-2 -left-4 w-12 h-px bg-amber-200 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
                 <div className="absolute -top-4 -left-2 w-px h-12 bg-amber-200 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                <div className="absolute -bottom-2 -right-4 w-12 h-px bg-amber-200 transition-all group-hover/btn-disposisi:w-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
+                <div className="absolute -bottom-4 -right-2 w-px h-12 bg-amber-200 transition-all group-hover/btn-disposisi:h-16 group-hover/btn-disposisi:bg-amber-400 hidden md:block" />
                 <button
                   disabled={saving || !txId}
                   onClick={async () => {
