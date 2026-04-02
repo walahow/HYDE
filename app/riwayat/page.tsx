@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import TopNavbar from "@/components/ui/TopNavbar";
@@ -146,13 +146,23 @@ export default function RiwayatMahasiswaPage() {
                                                 </div>
                                             </div>
 
-                                            <Link
-                                                href={`/student/document-view?txId=${t.id}`}
-                                                className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:bg-black active:text-white sm:w-auto w-full h-11 sm:h-auto"
-                                            >
-                                                DETAIL
-                                                <ExternalLink size={12} />
-                                            </Link>
+                                            <div className="flex items-center gap-2 sm:flex-row flex-col w-full sm:w-auto">
+                                                <Link
+                                                    href={`/v/${t.id.slice(-8).toLowerCase()}`}
+                                                    target="_blank"
+                                                    className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm active:bg-emerald-700 active:text-white sm:w-auto w-full h-11 sm:h-auto"
+                                                >
+                                                    <ShieldCheck size={12} />
+                                                    VERIFY
+                                                </Link>
+                                                <Link
+                                                    href={`/student/document-view?txId=${t.id}`}
+                                                    className="flex items-center justify-center gap-1.5 rounded-none bg-white text-zinc-400 border border-zinc-200 px-3 py-3 md:py-1.5 font-mono font-bold text-[10px] uppercase tracking-tighter hover:bg-black hover:text-white hover:border-black transition-all shadow-sm active:bg-black active:text-white sm:w-auto w-full h-11 sm:h-auto"
+                                                >
+                                                    DETAIL
+                                                    <ExternalLink size={12} />
+                                                </Link>
+                                            </div>
                                         </div>
                                     </HoverCard>
                                 ))}

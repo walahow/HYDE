@@ -1,18 +1,60 @@
 import { prisma } from "@/lib/prisma";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
-import { CheckCircle2, XCircle, Clock, Fingerprint, QrCode } from "lucide-react";
+import { CheckCircle2, Clock, Fingerprint, QrCode } from "lucide-react";
 import { notFound } from "next/navigation";
 
 export default async function VerificationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const transaction = await prisma.transaction.findUnique({
-    where: { id },
-    include: {
-      student: { select: { name: true } },
-      admin: { select: { destinationName: true } },
-    },
-  });
+  // Support both full MongoDB ObjectId AND the short 8-char suffix displayed in the UI.
+  // UI displays: t.id.slice(-8).toUpperCase() — so we accept that as a lookup key too.
+  const isShortId = id.length <= 8;
+
+  let transaction = null;
+
+  if (!isShortId) {
+    // Try exact match with full ID first
+    transaction = await prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        student: { select: { name: true } },
+        admin: { select: { destinationName: true } },
+      },
+    });
+  }
+
+  // If not found by exact match (or it's a short ID), resolve via raw MongoDB regex.
+  // Prisma cannot do endsWith on @db.ObjectId (binary field), so we use $runCommandRaw
+  // with $expr + $toString to match the string representation of _id.
+  if (!transaction) {
+    const suffix = id.toLowerCase();
+    const rawResult = await prisma.$runCommandRaw({
+      find: "Transaction",
+      filter: {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: "$_id" },
+            regex: `${suffix}$`,
+            options: "i",
+          },
+        },
+      },
+      limit: 1,
+      projection: { _id: 1 },
+    }) as { cursor?: { firstBatch?: Array<{ _id: { $oid: string } }> } };
+
+    const fullId = rawResult?.cursor?.firstBatch?.[0]?._id?.$oid;
+
+    if (fullId) {
+      transaction = await prisma.transaction.findUnique({
+        where: { id: fullId },
+        include: {
+          student: { select: { name: true } },
+          admin: { select: { destinationName: true } },
+        },
+      });
+    }
+  }
 
   if (!transaction) {
     notFound();
