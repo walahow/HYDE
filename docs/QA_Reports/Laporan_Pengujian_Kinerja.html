@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Pengujian Kinerja (Load & Stress Testing)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        h1 { text-align: center; border-bottom: none; }
+        .subtitle { text-align: center; color: #7f8c8d; font-style: italic; margin-bottom: 30px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+            text-align: center;
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .success { color: #27ae60; font-weight: bold; }
+        .fail { color: #e74c3c; font-weight: bold; }
+        .warning { color: #f39c12; font-weight: bold; }
+        .note-box {
+            background-color: #e8f4f8;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-snippet {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Laporan Pengujian Kinerja (Performance Testing)</h1>
+    <div class="subtitle">Aplikasi HYDE - Load Testing & Stress Testing menggunakan Grafana k6</div>
+
+    <h2>1. Tujuan Pengujian</h2>
+    <p>Pengujian ini bertujuan untuk mengukur tingkat responsivitas (<i>latency</i>), stabilitas (<i>error rate</i>), dan resiliensi (<i>daya tahan</i>) dari aplikasi HYDE ketika menerima lonjakan lalu lintas pengguna (<i>traffic</i>) secara bersamaan. Pengujian difokuskan pada endpoint <code>GET /api/destinations</code> yang mensimulasikan penarikan data dari database MongoDB Atlas.</p>
+
+    <h2>2. Lingkungan Pengujian (Test Environments)</h2>
+    <ul>
+        <li><b>Local (Development):</b> Menjalankan <code>npm run dev</code> untuk melihat dampak kompilasi <i>on-the-fly</i>.</li>
+        <li><b>Local (Production Build):</b> Menjalankan <code>npm run build && npm start</code> untuk menguji kode yang telah dioptimasi.</li>
+        <li><b>Cloud Production (Vercel):</b> Target URL <code>https://hyde.attazul.com/</code> dengan database MongoDB Atlas Free Tier (Limit 500 koneksi).</li>
+    </ul>
+
+    <h2>3. Hasil Load Testing (Normal Load)</h2>
+    <p>Skenario Load Testing disimulasikan menggunakan <b>10 Virtual Users (VU)</b> yang beroperasi secara serentak selama 40 detik.</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Environment</th>
+                <th>Target Load</th>
+                <th>Total Request</th>
+                <th>Avg Latency</th>
+                <th>P95 Latency</th>
+                <th>Error Rate</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Local (Development)</td>
+                <td>10 VUs</td>
+                <td>42 Request</td>
+                <td>4.43 detik</td>
+                <td class="fail">16.3 detik</td>
+                <td class="fail">50.00%</td>
+                <td class="fail">GAGAL</td>
+            </tr>
+            <tr>
+                <td>Local (Production)</td>
+                <td>10 VUs</td>
+                <td>160 Request</td>
+                <td>41.16 ms</td>
+                <td class="success">46.82 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Local (Production)</td>
+                <td>50 VUs</td>
+                <td>804 Request</td>
+                <td>23.25 ms</td>
+                <td class="success">43.30 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Local (Production)</td>
+                <td>100 VUs</td>
+                <td>1.580 Request</td>
+                <td>21.26 ms</td>
+                <td class="success">42.63 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Local (Production)</td>
+                <td>150 VUs</td>
+                <td>2.146 Request</td>
+                <td>22.66 ms</td>
+                <td class="success">43.94 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Cloud (Vercel)</td>
+                <td>10 VUs</td>
+                <td>130 Request</td>
+                <td>394.1 ms</td>
+                <td class="success">1.41 detik</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Cloud (Vercel)</td>
+                <td>50 VUs</td>
+                <td>658 Request</td>
+                <td>338.4 ms</td>
+                <td class="success">545.8 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Cloud (Vercel)</td>
+                <td>100 VUs</td>
+                <td>1.316 Request</td>
+                <td>334.8 ms</td>
+                <td class="success">560.3 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+            <tr>
+                <td>Cloud (Vercel)</td>
+                <td>150 VUs</td>
+                <td>1.776 Request</td>
+                <td>359.2 ms</td>
+                <td class="success">591.8 ms</td>
+                <td class="success">0.00%</td>
+                <td class="success">LULUS TINGGI</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="note-box">
+        <strong>Analisis Load Testing:</strong>
+        <p>Terdapat perbedaan metrik yang sangat ekstrem antara lingkungan <i>Development</i> dan <i>Production</i>. Pada Development, sistem mengalami kegagalan karena <i>bottleneck</i> pada <i>compiler Webpack/Turbopack</i>. Namun, pada versi <i>Production Build</i>, kode aplikasi tereksekusi dengan sangat efisien (P95 = 46ms).</p>
+        <p>Pada pengujian di lingkungan Cloud (Vercel), rata-rata <i>latency</i> berada di kisaran ~394ms karena jarak <i>network routing</i> ke server luar negeri. Tercatat <i>Max Latency</i> sesaat menyentuh angka 3.44 detik yang disebabkan oleh fenomena <b>Cold Start</b> (siklus bangunnya arsitektur Serverless), setelah itu kecepatan kembali stabil.</p>
+    </div>
+
+    <h2>4. Hasil Stress Testing (Push to Limits)</h2>
+    <p>Stress testing dilakukan secara lokal pada <i>Production Build</i> untuk menguji titik kritis (<i>Breaking Point</i>) dari aplikasi dan database (limit 500 koneksi). Pengujian dilakukan tanpa jeda waktu (<i>no sleep/think time</i>).</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Skenario Beban</th>
+                <th>Durasi</th>
+                <th>Total Request</th>
+                <th>P95 Latency</th>
+                <th>Error Rate</th>
+                <th>Hasil & Gejala</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>500 Virtual Users (DB Limit Test)</td>
+                <td>55 detik</td>
+                <td>10.920 Req</td>
+                <td class="warning">3.97 detik</td>
+                <td class="success">0.00%</td>
+                <td><i>Graceful Degradation</i> (Sistem melambat namun tidak ada yang error/crash).</td>
+            </tr>
+            <tr>
+                <td>2.000 Virtual Users (Extreme Resilience Test)</td>
+                <td>35 detik</td>
+                <td>5.348 Req</td>
+                <td class="warning">19.6 detik</td>
+                <td class="success">0.00%</td>
+                <td><i>Event Loop Saturated</i> (Sistem tidak crash meski diserang 2000 VU, namun antrean melar hingga ~20 detik).</td>
+            </tr>
+            <tr>
+                <td>2.000 Virtual Users<br><i>(RAM Dibatasi 64MB)</i></td>
+                <td>35 detik</td>
+                <td>57.157 Req</td>
+                <td class="fail">N/A (Timeout)</td>
+                <td class="fail">99.42%</td>
+                <td class="fail">Fatal Error (OOM Crash). Connection Refused.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="note-box">
+        <strong>Analisis Stress Testing & Breaking Point:</strong>
+        <p>Pada uji beban 500 VU, aplikasi HYDE mencatatkan pencapaian luar biasa dengan menangani nyaris 11.000 request tanpa satu pun error (0%). Meskipun database Atlas memiliki batas 500 koneksi, sistem <b>TIDAK</b> mengalami <i>Connection Refused</i>. Hal ini dikarenakan efektivitas arsitektur <b>Connection Pooling</b> dari <i>Prisma ORM</i>, yang secara cerdas menahan dan mengantrekan permintaan HTTP di dalam memori <i>Event Loop</i> Node.js dan menyalurkannya lewat jumlah koneksi database yang kecil namun efisien. Efek samping (<i>trade-off</i>) dari antrean ini adalah membengkaknya <i>latency</i> hingga ~4 detik.</p>
+        
+        <p>Untuk menemukan titik hancur sistem yang sesungguhnya, dilakukan pengujian dengan membatasi memori (RAM 64MB) di bawah gempuran 2.000 VU. Hasilnya, server Node.js kehabisan memori dan menghasilkan log kematian: <br>
+        <code class="code-snippet">FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory</code>.<br>
+        Ini membuktikan bahwa batasan sesungguhnya dari aplikasi ini terletak pada alokasi memori server (RAM), bukan pada efisiensi kodenya.</p>
+    </div>
+
+    <h2>5. Kesimpulan</h2>
+    <ol>
+        <li>Kualitas penulisan kode pada aplikasi HYDE dan efisiensi <i>query ORM</i> berada di tingkat yang <b>sangat baik</b>, dibuktikan dengan 0% <i>Error Rate</i> pada *Load Test* skala normal.</li>
+        <li>Sistem mampu melindungi dirinya dari pemutusan paksa koneksi database eksternal melalui mekanisme <i>Connection Pooling</i>.</li>
+        <li>Peningkatan spesifikasi perangkat keras (khususnya RAM) berbanding lurus dengan ketahanan aplikasi dalam menangani <i>Traffic Spikes</i> ekstrim (DDoS-style loads).</li>
+    </ol>
+
+</body>
+</html>

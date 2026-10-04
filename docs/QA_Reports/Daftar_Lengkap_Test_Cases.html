@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Lengkap Test Cases - HYDE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #fcfcfc;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #eaeaea;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #fff;
+            background-color: #2980b9;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 40px;
+            font-size: 1.2em;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 5px;
+            font-size: 1.1em;
+        }
+        .module-badge {
+            background-color: #e8f4f8;
+            color: #0056b3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 1em;
+            border: 1px solid #cce5ff;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .keyword {
+            font-family: monospace;
+            background: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #d35400;
+        }
+        @media print {
+            body { padding: 0; background-color: #fff; }
+            .container { box-shadow: none; border: none; padding: 0; }
+            h2 { background-color: transparent; color: #2980b9; border-bottom: 2px solid #2980b9; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LAMPIRAN: DAFTAR LENGKAP TEST CASES</h1>
+        <div class="subtitle">Penjabaran detail dari 74 test case (assertions) pada pengujian fungsional sistem HYDE</div>
+
+        <h2>A. BLACK-BOX TESTING (PLAYWRIGHT)</h2>
+
+        <h3>Modul: <span class="module-badge">auth.spec.ts</span> (Login & Routing)</h3>
+        <ol>
+            <li>Valid student login navigates away from <span class="keyword">/login</span>, not to <span class="keyword">/admin</span></li>
+            <li>Valid admin login redirects to <span class="keyword">/admin</span> area</li>
+            <li>Wrong password shows generic error, no standalone "password salah"</li>
+            <li>Wrong NIM same generic error format as wrong password</li>
+            <li>Empty form blocked by HTML required, does not call API</li>
+            <li>Unauthenticated visit to <span class="keyword">/admin</span> redirected to <span class="keyword">/login</span></li>
+            <li>Unauthenticated visit to <span class="keyword">/student</span> redirected to <span class="keyword">/login</span></li>
+            <li>Student visiting <span class="keyword">/admin</span> after login redirected away from <span class="keyword">/admin</span></li>
+            <li>Admin visiting <span class="keyword">/student</span> after login middleware does not redirect from <span class="keyword">/student</span> root</li>
+            <li>After login, refreshing the page still logged in (session persists)</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">hybrid.spec.ts</span> (Alur QR & Fisik)</h3>
+        <ol>
+            <li>Admin advances HYBRID transaction (<span class="keyword">REVIEWING</span> → <span class="keyword">AWAITING_SCAN</span>)</li>
+            <li>Admin generates disposisi on <span class="keyword">VALIDATED</span> HYBRID status moves to <span class="keyword">AWAITING_SCAN</span></li>
+            <li><span class="keyword">/admin/scan</span> page loads with camera UI for admin</li>
+            <li><span class="keyword">/admin/scan</span> as student redirected away</li>
+            <li>Mock scan via API status becomes <span class="keyword">VALIDATED</span> with scannedAt set</li>
+            <li>COMPLETED HYBRID on <span class="keyword">/v/[id]</span> shows physical verification heading</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">security.spec.ts</span> (Privasi & Limitasi)</h3>
+        <ol>
+            <li><span class="keyword">/v/[id]</span> public page does NOT contain student NIM in HTML</li>
+            <li><span class="keyword">/v/[id]</span> does NOT expose fileUrl or message contents</li>
+            <li>Direct blob URL access without auth blocked</li>
+            <li>Student A cannot access Student B's files via <span class="keyword">/api/blob/proxy</span></li>
+            <li>Rate limiting: 6 rapid login attempts 6th returns <span class="keyword">429</span> (Too Many Requests)</li>
+            <li>GET <span class="keyword">/api/transactions</span> without auth protected (401 or redirect to /login)</li>
+            <li>Student calling <span class="keyword">/api/transactions/[id]/scan</span> returns <span class="keyword">403</span> (role guard)</li>
+            <li>Admin from different transaction calling scan returns <span class="keyword">403</span> (ownership guard)</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">transaction.spec.ts</span> (Alur Digital Penuh)</h3>
+        <ol>
+            <li>Student creates DIGITAL transaction status is <span class="keyword">DRAFT</span></li>
+            <li>Student creates HYBRID transaction status is <span class="keyword">DRAFT</span></li>
+            <li>Student A cannot see Student B's transaction (<span class="keyword">403</span>)</li>
+            <li>Admin can see their assigned transaction</li>
+            <li>Admin claims transaction (<span class="keyword">DRAFT</span> → <span class="keyword">REVIEWING</span>)</li>
+            <li>Admin sends to <span class="keyword">REVISION</span> student sees REVISION status</li>
+            <li>Student resubmits from <span class="keyword">REVISION</span> status moves back to REVIEWING</li>
+            <li>Admin approves DIGITAL transaction (<span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span>)</li>
+            <li>DIGITAL <span class="keyword">VALIDATED</span> transaction shows complete for student</li>
+        </ol>
+
+        <h2>B. WHITE-BOX TESTING (JEST)</h2>
+
+        <h3>Modul: <span class="module-badge">auth.test.ts</span> (Logic Session & Role)</h3>
+        <ol>
+            <li>Returns session when valid session and DB user exist (no role required)</li>
+            <li>Throws <span class="keyword">UNAUTHORIZED</span> when no session exists</li>
+            <li>Throws <span class="keyword">FORBIDDEN</span> when DB role does not match required role</li>
+            <li>Throws <span class="keyword">UNAUTHORIZED</span> when user no longer exists in DB (deleted user)</li>
+            <li>Uses DB role for verification - not the JWT role</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">blob-proxy.test.ts</span> (File Access Logic)</h3>
+        <ol>
+            <li>Missing url param returns <span class="keyword">400</span></li>
+            <li>File record not found in DB returns <span class="keyword">404</span></li>
+            <li>Stranger (not student or admin) requests file returns <span class="keyword">403</span></li>
+            <li>Transaction student (owner) can access their file returns <span class="keyword">200</span> proxied response</li>
+            <li>Assigned admin can access the file returns <span class="keyword">200</span> proxied response</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">ownership.test.ts</span> (Akses Data Internal)</h3>
+        <ol>
+            <li>Student reads their own transaction returns <span class="keyword">200</span></li>
+            <li>Student reads another student's transaction returns <span class="keyword">403</span></li>
+            <li>Assigned admin reads their transaction returns <span class="keyword">200</span></li>
+            <li>Unassigned admin reads a transaction returns <span class="keyword">403</span></li>
+            <li>Student calls scan endpoint returns <span class="keyword">403</span></li>
+            <li>Non-assigned admin calls scan returns <span class="keyword">403</span> (ownership guard)</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">qr-parser.test.ts</span> (Generate/Decode URL)</h3>
+        <ol>
+            <li>Valid URL with correct domain and <span class="keyword">/v/[id]</span> path returns id</li>
+            <li>Wrong domain URL returns null</li>
+            <li>URL missing <span class="keyword">/v/</span> path segment returns null</li>
+            <li>Completely invalid string (not a URL) returns null</li>
+            <li>Empty string returns null</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">scan.test.ts</span> (Logic Pemindaian QR)</h3>
+        <ol>
+            <li>Returns <span class="keyword">400</span> if transaction mode is DIGITAL (not HYBRID)</li>
+            <li>Returns <span class="keyword">400</span> if transaction status is not AWAITING_SCAN</li>
+            <li>Returns <span class="keyword">403</span> if adminId does not match session user id</li>
+            <li>Returns <span class="keyword">404</span> if transaction does not exist</li>
+            <li>On success: status = <span class="keyword">VALIDATED</span>, scannedAt and completedAt are set</li>
+            <li>On success: StatusLog entry written with <span class="keyword">AWAITING_SCAN</span> → <span class="keyword">VALIDATED</span></li>
+            <li>On success: response includes student name and destinationName</li>
+        </ol>
+
+        <h3>Modul: <span class="module-badge">status-transitions.test.ts</span> (State-Machine)</h3>
+        <ol>
+            <li>DIGITAL: <span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span> is allowed</li>
+            <li>DIGITAL: <span class="keyword">REVIEWING</span> → <span class="keyword">AWAITING_SCAN</span> is NOT allowed</li>
+            <li>DIGITAL: <span class="keyword">AWAITING_SCAN</span> → <span class="keyword">VALIDATED</span> is NOT allowed (no such DIGITAL state)</li>
+            <li>HYBRID: <span class="keyword">REVIEWING</span> → <span class="keyword">AWAITING_SCAN</span> is allowed</li>
+            <li>HYBRID: <span class="keyword">AWAITING_SCAN</span> → <span class="keyword">VALIDATED</span> is allowed</li>
+            <li>HYBRID: <span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span> returns false (must go via AWAITING_SCAN)</li>
+            <li>Any mode: <span class="keyword">VALIDATED</span> → anything returns false (terminal state)</li>
+            <li>Student attempting <span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span> for own DIGITAL tx returns <span class="keyword">403</span> (STUDENT can only move REVISION REVIEWING)</li>
+            <li>Admin: DIGITAL <span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span> succeeds and sets completedAt</li>
+            <li>Admin: DIGITAL <span class="keyword">VALIDATED</span> → anything returns <span class="keyword">400</span> (terminal state)</li>
+            <li>Admin: HYBRID <span class="keyword">REVIEWING</span> → <span class="keyword">AWAITING_SCAN</span> succeeds</li>
+            <li>Admin: HYBRID <span class="keyword">REVIEWING</span> → <span class="keyword">VALIDATED</span> returns <span class="keyword">400</span> (must go via AWAITING_SCAN)</li>
+            <li>HYBRID <span class="keyword">AWAITING_SCAN</span> → <span class="keyword">VALIDATED</span> sets completedAt (and scannedAt)</li>
+        </ol>
+    </div>
+</body>
+</html>

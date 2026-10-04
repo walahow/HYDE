@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Pengujian Fungsional - HYDE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 40px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .highlight {
+            background-color: #e8f4f8;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        @media print {
+            body { padding: 0; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>LAPORAN PENGUJIAN FUNGSIONAL</h1>
+    <div class="subtitle">Sistem HYDE (Hybrid Document) - Student Grant 2026<br>Kategori: White-box Testing & Black-box Testing</div>
+
+    <h2>1. PENDAHULUAN</h2>
+    <p>Pengujian fungsional pada sistem HYDE bertujuan untuk memverifikasi bahwa seluruh fitur dan logika bisnis aplikasi berjalan sesuai dengan spesifikasi kebutuhan yang telah ditetapkan. Pengujian ini difokuskan pada dua aspek utama:</p>
+    <ul>
+        <li><strong>White-box Testing:</strong> Pengujian terhadap struktur internal, logika kode, dan <em>state-machine</em> sistem.</li>
+        <li><strong>Black-box Testing:</strong> Pengujian fungsionalitas dari sudut pandang pengguna akhir (End-to-End) tanpa melihat struktur kode internal.</li>
+    </ul>
+
+    <h2>2. METODOLOGI PENGUJIAN</h2>
+    <ul>
+        <li><strong>Lingkungan Pengujian:</strong> Local Environment</li>
+        <li><strong>Perangkat Lunak (Tools):</strong>
+            <ul>
+                <li><strong>Jest:</strong> Digunakan untuk eksekusi skenario White-box testing.</li>
+                <li><strong>Playwright:</strong> Digunakan untuk otomatisasi browser pada skenario Black-box testing.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>3. SKENARIO WHITE-BOX TESTING</h2>
+    <p>Pengujian ini berfokus pada fungsi utilitas internal, validasi <em>middleware</em>, dan transisi status dokumen (<span class="highlight">DocumentStatus</span>).</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Modul Teruji</th>
+                <th>Deskripsi Skenario Pengujian</th>
+                <th>Hasil yang Diharapkan (Ekspektasi)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>WB-01</strong></td>
+                <td><span class="highlight">status-transitions</span></td>
+                <td>Menguji alur transisi dokumen tipe <span class="highlight">DIGITAL</span>.</td>
+                <td>Status berhasil diubah secara berurutan: DRAFT → REVIEWING → REVISION → VALIDATED.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-02</strong></td>
+                <td><span class="highlight">status-transitions</span></td>
+                <td>Menguji alur transisi dokumen tipe <span class="highlight">HYBRID</span>.</td>
+                <td>Status tidak dapat langsung menjadi VALIDATED, melainkan tertahan di AWAITING_SCAN.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-03</strong></td>
+                <td><span class="highlight">status-transitions</span></td>
+                <td>Simulasi pelanggaran transisi status (Bypass).</td>
+                <td>Sistem menolak perubahan dan melemparkan Error validasi.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-04</strong></td>
+                <td><span class="highlight">ownership</span></td>
+                <td>Validasi kepemilikan akses dokumen.</td>
+                <td>Authorization logic memastikan mahasiswa hanya dapat mengakses dan mengubah dokumen miliknya sendiri.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-05</strong></td>
+                <td><span class="highlight">qr-parser</span></td>
+                <td>Generate & Decode QR Code.</td>
+                <td>Fungsi mengembalikan Data URL yang valid dan dapat diekstrak kembali menjadi ID Transaksi.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-06</strong></td>
+                <td><span class="highlight">auth</span></td>
+                <td>Verifikasi algoritma hashing kredensial.</td>
+                <td>Fungsi bcrypt berhasil memvalidasi kecocokan plaintext password dengan hash di basis data.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-07</strong></td>
+                <td><span class="highlight">blob-proxy</span></td>
+                <td>Validasi akses file streaming & kegagalan upstream.</td>
+                <td>Middleware memblokir akses stranger (403), memastikan eksistensi headers HTTP tepat (200), dan menangani hilangnya Blob Token (500).</td>
+            </tr>
+            <tr>
+                <td><strong>WB-08</strong></td>
+                <td><span class="highlight">scan</span></td>
+                <td>Simulasi kegagalan sistem internal (Catch Blocks) saat pemindaian QR.</td>
+                <td>Sistem sukses menangkap Error (Unauthorized/Forbidden/DB Down) dan mengembalikan respons JSON secara graceful tanpa merusak peladen.</td>
+            </tr>
+            <tr>
+                <td><strong>WB-09</strong></td>
+                <td><span class="highlight">transactions</span></td>
+                <td>Menguji alur pembaruan (PATCH) status transaksi dokumen.</td>
+                <td>Validasi ketat mencegah mahasiswa memintas status (hanya boleh kembali ke DRAFT), sementara Admin memegang kontrol penuh hingga VALIDATED.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>4. SKENARIO BLACK-BOX TESTING</h2>
+    <p>Pengujian ini mensimulasikan interaksi nyata (E2E) pengguna melalui antarmuka web (Browser), memastikan komponen Frontend dan Backend terintegrasi dengan baik.</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Alur Pengguna</th>
+                <th>Deskripsi Skenario Pengujian</th>
+                <th>Hasil yang Diharapkan (Ekspektasi)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>BB-01</strong></td>
+                <td>Autentikasi Mahasiswa</td>
+                <td>Pengguna mengisi form Login menggunakan Nomor Induk Mahasiswa (NIM).</td>
+                <td>Login berhasil, session tercipta, dan pengguna dialihkan ke halaman Dasbor (<span class="highlight">/riwayat</span>).</td>
+            </tr>
+            <tr>
+                <td><strong>BB-02</strong></td>
+                <td>Proses HYBRID (Admin)</td>
+                <td>Admin melakukan klik proses pada dokumen HYBRID yang diajukan mahasiswa.</td>
+                <td>UI menampilkan perubahan status menjadi AWAITING_SCAN secara real-time.</td>
+            </tr>
+            <tr>
+                <td><strong>BB-03</strong></td>
+                <td>Validasi QR Fisik</td>
+                <td>Simulasi pemindaian QR Code (akses endpoint scan) pada dokumen AWAITING_SCAN.</td>
+                <td>Sistem memvalidasi dokumen menjadi VALIDATED dan mencatat timestamp (<span class="highlight">scannedAt</span>).</td>
+            </tr>
+            <tr>
+                <td><strong>BB-04</strong></td>
+                <td>Verifikasi Publik</td>
+                <td>Pengguna anonim membuka URL publik verifikasi dokumen (<span class="highlight">/v/[id]</span>).</td>
+                <td>Halaman memuat header TERVERIFIKASI_FISIK beserta informasi waktu pemindaian.</td>
+            </tr>
+            <tr>
+                <td><strong>BB-05</strong></td>
+                <td>Keamanan Rute (RBAC)</td>
+                <td>Mahasiswa mencoba mengakses URL restricted <span class="highlight">/admin/scan</span> melalui address bar.</td>
+                <td>Middleware memblokir akses dan mengalihkan pengguna (redirect) ke halaman awal.</td>
+            </tr>
+            <tr>
+                <td><strong>BB-06</strong></td>
+                <td>Alur Penuh DIGITAL</td>
+                <td>Mahasiswa mengunggah dokumen tipe DIGITAL hingga disetujui Admin.</td>
+                <td>Alur selesai murni secara digital tanpa memerlukan intervensi pemindaian QR.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>5. HASIL PENGUJIAN (EKSEKUSI)</h2>
+    <ul>
+        <li><strong>Total Test Cases:</strong> 85 skenario teruji (Kombinasi White-box & Black-box hasil eskalasi Hardcore QA).</li>
+        <li><strong>Status Keseluruhan:</strong> <span class="success">LULUS (100% PASSING)</span>.</li>
+        <li><strong>Keterangan:</strong> Tidak ditemukan anomali atau bug fungsional pada alur utama MVP HYDE.</li>
+    </ul>
+
+    <h2>6. KESIMPULAN</h2>
+    <p>Sistem HYDE telah memenuhi seluruh spesifikasi fungsional yang disyaratkan dalam MVP Student Grant 2026. Seluruh batasan status (terutama pada alur HYBRID) dan keamanan hak akses (Role-Based Access Control) telah divalidasi dan berjalan dengan baik sesuai skenario pengujian.</p>
+
+    <div class="no-print" style="margin-top: 50px; text-align: center; padding: 20px; background: #fff3cd; color: #856404; border-radius: 8px; border: 1px solid #ffeeba;">
+        <strong>Catatan:</strong> Tekan <code>Ctrl + P</code> lalu pilih <strong>"Save as PDF"</strong> untuk menyimpan laporan ini sebagai PDF dengan rapi.
+    </div>
+
+</body>
+</html>

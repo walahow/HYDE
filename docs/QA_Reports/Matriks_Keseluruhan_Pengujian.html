@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriks Keseluruhan Pengujian Sistem (QA Architecture)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        h1 { text-align: center; border-bottom: none; }
+        .subtitle { text-align: center; color: #7f8c8d; font-style: italic; margin-bottom: 30px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+        }
+        .bg-blue { background-color: #2980b9; }
+        .bg-green { background-color: #27ae60; }
+        .bg-purple { background-color: #8e44ad; }
+        .bg-orange { background-color: #e67e22; }
+    </style>
+</head>
+<body>
+
+    <h1>Matriks Keseluruhan Pengujian Sistem (QA Architecture)</h1>
+    <div class="subtitle">Aplikasi HYDE - Rangkuman Strategi <i>Quality Assurance</i> (Fungsional, Mutasi, dan Kinerja)</div>
+
+    <p>Pengujian pada aplikasi HYDE dirancang menggunakan pendekatan arsitektur QA berlapis (<i>Multi-layered QA Architecture</i>). Matriks di bawah ini memetakan bagaimana ketiga jenis pengujian saling melengkapi satu sama lain untuk memastikan kualitas sistem dari segi logika internal, perilaku pengguna, ketahanan kode terhadap bug, hingga skalabilitas infrastruktur.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Jenis Pengujian</th>
+                <th width="20%">Ruang Lingkup & Fokus (Scope)</th>
+                <th width="15%">Tools & Metodologi</th>
+                <th width="25%">Penjelasan & Tujuan (Objective)</th>
+                <th width="25%">Hasil Akhir (Metrik Utama)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Fungsional -->
+            <tr>
+                <td>
+                    <b>1. Pengujian Fungsional</b><br>
+                    <span class="badge bg-blue">White-box</span>
+                    <span class="badge bg-blue">Black-box</span>
+                </td>
+                <td>
+                    <ul>
+                        <li><b>Whitebox:</b> <code>tests/whitebox/</code> (Otentikasi, Transisi Status, PDF, QR Logic).</li>
+                        <li><b>Blackbox:</b> <code>tests/blackbox/</code> (Alur UI/E2E Pengguna, Browser sungguhan).</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        <li><b>Jest</b> (Whitebox Unit)</li>
+                        <li><b>Playwright</b> (Blackbox E2E)</li>
+                    </ul>
+                </td>
+                <td>Menguji apakah fitur-fitur aplikasi berjalan sesuai spesifikasi (<i>Happy Path & Negative Path</i>). Jest memastikan hitungan logika internal akurat, sedangkan Playwright memastikan antarmuka (UI) dapat dioperasikan oleh pengguna.</td>
+                <td>
+                    <ul>
+                        <li>Seluruh <i>Test Cases</i> berstatus <b>PASS (100%)</b>.</li>
+                        <li>Fungsi utama (upload, scan QR, validasi) berjalan tanpa kegagalan.</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- Mutasi -->
+            <tr>
+                <td>
+                    <b>2. Pengujian Mutasi</b><br>
+                    <span class="badge bg-purple">Mutation Testing</span>
+                </td>
+                <td>
+                    <b>Fokus Eksklusif:</b> <i>Core Business Logic</i> (<code>lib/*.ts</code>) dan API kritis (<code>blob/proxy/route.ts</code>, <code>transactions/[id]/route.ts</code>, <code>scan/route.ts</code>).
+                </td>
+                <td>
+                    <ul>
+                        <li><b>StrykerJS</b></li>
+                        <li>Mode: <i>Targeted Full Suite</i> (termasuk mock Prisma).</li>
+                    </ul>
+                </td>
+                <td><b>Menguji si Penguji (<i>Testing the Tests</i>).</b> Menyusupkan <i>bug</i> buatan (mutant) ke dalam kode sumber untuk mengukur seberapa teliti dan sensitif pengujian <i>White-box</i> dalam menyadari kerusakan tersebut.</td>
+                <td>
+                    <ul>
+                        <li><b>Mutation Score: 65.91%</b> (Lulus standar industri >60%).</li>
+                        <li>Fungsi utilitas (95%-100%), API Scan (82.28%), API Blob Proxy (69.62%).</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- Kinerja -->
+            <tr>
+                <td>
+                    <b>3. Pengujian Kinerja</b><br>
+                    <span class="badge bg-orange">Load Testing</span>
+                    <span class="badge bg-orange">Stress Testing</span>
+                </td>
+                <td>
+                    <b>Infrastruktur & API:</b><br>
+                    Rute GET <code>/api/destinations</code> di lingkungan <b>Local Production</b> (mesin lokal) dan <b>Cloud Production</b> (Vercel Edge & MongoDB Atlas).
+                </td>
+                <td>
+                    <ul>
+                        <li><b>Grafana k6</b></li>
+                        <li>Matriks Skala: 10, 50, 100, 150 VU.</li>
+                        <li>Puncak: 2000 VU.</li>
+                    </ul>
+                </td>
+                <td>Menguji keandalan (<i>reliability</i>) dan skalabilitas peladen (<i>server</i>) saat menerima lonjakan lalu lintas yang masif. Memastikan koneksi database tidak tumbang akibat batas limit koneksi (<i>Connection Pooling</i>).</td>
+                <td>
+                    <ul>
+                        <li><b>Skala 150 VU:</b> 0% Error, Latensi Vercel P95 <b>~591ms</b>.</li>
+                        <li><b>Stress Test (2000 VU):</b> Aplikasi tidak mati berkat antrean <i>Event Loop</i>, mengalami <i>Graceful Degradation</i> (latensi memanjang hingga 19 detik namun koneksi DB tetap utuh).</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>
