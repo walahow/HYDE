@@ -76,6 +76,31 @@ describe('validateTransition() — pure function', () => {
     expect(validateTransition('HYBRID',  'VALIDATED', 'REVIEWING')).toBe(false);
     expect(validateTransition('DIGITAL', 'VALIDATED', 'DRAFT')).toBe(false);
   });
+
+  test('DIGITAL: DRAFT -> REVIEWING is allowed', () => {
+    expect(validateTransition('DIGITAL', 'DRAFT', 'REVIEWING')).toBe(true);
+  });
+  test('DIGITAL: REVIEWING -> REVISION is allowed', () => {
+    expect(validateTransition('DIGITAL', 'REVIEWING', 'REVISION')).toBe(true);
+  });
+  test('DIGITAL: REVISION -> REVIEWING is allowed', () => {
+    expect(validateTransition('DIGITAL', 'REVISION', 'REVIEWING')).toBe(true);
+  });
+  test('HYBRID: DRAFT -> REVIEWING is allowed', () => {
+    expect(validateTransition('HYBRID', 'DRAFT', 'REVIEWING')).toBe(true);
+  });
+  test('HYBRID: REVIEWING -> REVISION is allowed', () => {
+    expect(validateTransition('HYBRID', 'REVIEWING', 'REVISION')).toBe(true);
+  });
+  test('HYBRID: REVISION -> REVIEWING is allowed', () => {
+    expect(validateTransition('HYBRID', 'REVISION', 'REVIEWING')).toBe(true);
+  });
+  test('Any mode: Invalid mode returns false', () => {
+    expect(validateTransition('UNKNOWN_MODE' as any, 'DRAFT', 'REVIEWING')).toBe(false);
+  });
+  test('Any mode: Invalid fromStatus returns false', () => {
+    expect(validateTransition('DIGITAL', 'UNKNOWN_STATUS' as any, 'REVIEWING')).toBe(false);
+  });
 });
 
 // ── Part B: route handler integration tests ───────────────────────────────────
@@ -188,4 +213,30 @@ describe('PATCH /status route handler', () => {
       })
     );
   });
+
+  test('DIGITAL: DRAFT -> REVIEWING is allowed', () => {
+    expect(validateTransition('DIGITAL', 'DRAFT', 'REVIEWING')).toBe(true);
+  });
+  test('DIGITAL: REVIEWING -> REVISION is allowed', () => {
+    expect(validateTransition('DIGITAL', 'REVIEWING', 'REVISION')).toBe(true);
+  });
+  test('DIGITAL: REVISION -> REVIEWING is allowed', () => {
+    expect(validateTransition('DIGITAL', 'REVISION', 'REVIEWING')).toBe(true);
+  });
+  test('HYBRID: DRAFT -> REVIEWING is allowed', () => {
+    expect(validateTransition('HYBRID', 'DRAFT', 'REVIEWING')).toBe(true);
+  });
+  test('HYBRID: REVIEWING -> REVISION is allowed', () => {
+    expect(validateTransition('HYBRID', 'REVIEWING', 'REVISION')).toBe(true);
+  });
+  test('HYBRID: REVISION -> REVIEWING is allowed', () => {
+    expect(validateTransition('HYBRID', 'REVISION', 'REVIEWING')).toBe(true);
+  });
+  test('Any mode: Invalid mode returns false', () => {
+    expect(validateTransition('UNKNOWN_MODE' as any, 'DRAFT', 'REVIEWING')).toBe(false);
+  });
+  test('Any mode: Invalid fromStatus returns false', () => {
+    expect(validateTransition('DIGITAL', 'UNKNOWN_STATUS' as any, 'REVIEWING')).toBe(false);
+  });
 });
+

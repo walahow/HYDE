@@ -110,4 +110,68 @@ describe('GET /api/blob/proxy', () => {
     const res = await GET(makeRequest());
     expect(res.status).toBe(200);
   });
+
+  test('6. Missing BLOB_READ_WRITE_TOKEN -> 500', async () => {
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    mockGetServerSession.mockResolvedValue(STUDENT_SESSION as any);
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' });
+    mockFileFindFirst.mockResolvedValue(FILE_RECORD);
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/Missing blob token/);
+  });
+
+  test('7. Upstream fetch fails -> 500', async () => {
+    mockGetServerSession.mockResolvedValue(STUDENT_SESSION as any);
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' });
+    mockFileFindFirst.mockResolvedValue(FILE_RECORD);
+    mockFetch.mockResolvedValue({ ok: false, status: 502 } as any);
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toMatch(/Blob fetch failed: 502/);
+  });
+
+  test('8. Content-Type fallback to octet-stream', async () => {
+    mockGetServerSession.mockResolvedValue(STUDENT_SESSION as any);
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' });
+    mockFileFindFirst.mockResolvedValue(FILE_RECORD);
+    mockFetch.mockResolvedValue({
+      ok: true, body: new ReadableStream(), headers: new Headers() // no content-type
+    } as any);
+    const res = await GET(makeRequest());
+    expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
+  });
+
+  test('9. Console logs and exact header matches', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const logSpy = jest.spyOn(console, 'log').mockImplementation();
+    const errSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+    // Stranger triggers warn
+    mockGetServerSession.mockResolvedValue(STRANGER_SESSION as any);
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' });
+    mockFileFindFirst.mockResolvedValue(FILE_RECORD);
+    await GET(makeRequest());
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Forbidden: user stranger tried to access file file-1'));
+
+    // Student triggers log and exact headers
+    mockGetServerSession.mockResolvedValue(STUDENT_SESSION as any);
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' });
+    mockFetch.mockResolvedValue({ ok: true, body: new ReadableStream(), headers: new Headers({'Content-Type': 'application/pdf'}) } as any);
+    const res = await GET(makeRequest());
+    
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Streaming file file-1 for user student-1'));
+    
+    // Assert headers to kill Survived mutants
+    expect(res.headers.get('Content-Type')).toBe('application/pdf');
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(res.headers.get('Content-Disposition')).toBe('inline; filename="file-1.pdf"');
+    
+    warnSpy.mockRestore();
+    logSpy.mockRestore();
+    errSpy.mockRestore();
+  });
 });
+

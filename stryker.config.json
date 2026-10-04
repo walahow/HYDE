@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "jest",
+  "reporters": [
+    "progress",
+    "clear-text",
+    "html"
+  ],
+  "coverageAnalysis": "perTest",
+  "jest": {
+    "configFile": "jest.config.ts"
+  },
+  "mutate": [
+    "lib/auth.ts",
+    "lib/parse-qr-url.ts",
+    "lib/validate-transition.ts",
+    "app/api/blob/proxy/route.ts",
+    "app/api/transactions/*/route.ts",
+    "app/api/transactions/*/scan/route.ts",
+    "!app/api/transactions/destinations/route.ts"
+  ]
+}

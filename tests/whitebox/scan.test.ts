@@ -70,6 +70,8 @@ describe('PATCH /api/transactions/[id]/scan', () => {
 
     const res = await PATCH(makeRequest(), makeParams() as any);
     expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe('Forbidden');
   });
 
   test('4. Returns 404 if transaction does not exist', async () => {
@@ -78,6 +80,8 @@ describe('PATCH /api/transactions/[id]/scan', () => {
 
     const res = await PATCH(makeRequest(), makeParams() as any);
     expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe('Transaction not found');
   });
 
   test('5. On success: status = VALIDATED, scannedAt and completedAt are set', async () => {
@@ -136,6 +140,7 @@ describe('PATCH /api/transactions/[id]/scan', () => {
         changedById:   'admin-1',
         fromStatus:    'AWAITING_SCAN',
         toStatus:      'VALIDATED',
+        note:          'Physical QR scan confirmed',
       }),
     });
   });
@@ -158,7 +163,36 @@ describe('PATCH /api/transactions/[id]/scan', () => {
     const res = await PATCH(makeRequest(), makeParams() as any);
     const body = await res.json();
 
+    expect(body.message).toBe('Scan confirmed');
     expect(body.transaction.student.name).toBe('Ahmad Ali');
     expect(body.transaction.admin.destinationName).toBe('Fakultas Ekonomi dan Bisnis');
   });
+
+  test('8. Catch block UNAUTHORIZED', async () => {
+    mockGetServerSession.mockRejectedValue(new Error('UNAUTHORIZED'));
+    const res = await PATCH(makeRequest(), makeParams() as any);
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.message).toBe('Unauthorized');
+  });
+
+  test('9. Catch block FORBIDDEN', async () => {
+    mockGetServerSession.mockRejectedValue(new Error('FORBIDDEN'));
+    const res = await PATCH(makeRequest(), makeParams() as any);
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.message).toBe('Forbidden');
+  });
+
+  test('10. Catch block generic 500', async () => {
+    mockGetServerSession.mockRejectedValue(new Error('DB_DOWN'));
+    const errSpy = jest.spyOn(console, 'error').mockImplementation();
+    const res = await PATCH(makeRequest(), makeParams() as any);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe('Internal server error');
+    expect(errSpy).toHaveBeenCalledWith('[SCAN_PATCH]', expect.any(Error));
+    errSpy.mockRestore();
+  });
 });
+
