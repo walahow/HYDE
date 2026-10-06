@@ -10,10 +10,10 @@ import { getServerSession } from 'next-auth/next';
 import { PATCH } from '@/app/api/transactions/[id]/scan/route';
 
 const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
-const mockUserFindUnique   = prisma.user.findUnique as jest.Mock;
-const mockTxFindUnique     = prisma.transaction.findUnique as jest.Mock;
-const mockTxUpdate         = prisma.transaction.update as jest.Mock;
-const mockStatusLogCreate  = prisma.statusLog.create as jest.Mock;
+const mockUserFindUnique = prisma.user.findUnique as jest.Mock;
+const mockTxFindUnique = prisma.transaction.findUnique as jest.Mock;
+const mockTxUpdate = prisma.transaction.update as jest.Mock;
+const mockStatusLogCreate = prisma.statusLog.create as jest.Mock;
 
 const ADMIN_SESSION = { user: { id: 'admin-1', role: 'ADMIN' } };
 
@@ -137,10 +137,10 @@ describe('PATCH /api/transactions/[id]/scan', () => {
     expect(mockStatusLogCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         transactionId: 'tx-1',
-        changedById:   'admin-1',
-        fromStatus:    'AWAITING_SCAN',
-        toStatus:      'VALIDATED',
-        note:          'Physical QR scan confirmed',
+        changedById: 'admin-1',
+        fromStatus: 'AWAITING_SCAN',
+        toStatus: 'VALIDATED',
+        note: 'Physical QR scan confirmed',
       }),
     });
   });
@@ -156,7 +156,7 @@ describe('PATCH /api/transactions/[id]/scan', () => {
       id: 'tx-1', documentType: 'Test Doc', status: 'VALIDATED',
       scannedAt: new Date(), completedAt: new Date(),
       student: { name: 'Ahmad Ali' },
-      admin:   { destinationName: 'Fakultas Ekonomi dan Bisnis' },
+      admin: { destinationName: 'Fakultas Ekonomi dan Bisnis' },
     });
     mockStatusLogCreate.mockResolvedValue({});
 
@@ -177,7 +177,8 @@ describe('PATCH /api/transactions/[id]/scan', () => {
   });
 
   test('9. Catch block FORBIDDEN', async () => {
-    mockGetServerSession.mockRejectedValue(new Error('FORBIDDEN'));
+    mockAdminSession();
+    mockUserFindUnique.mockResolvedValue({ role: 'STUDENT' }); // Triggers FORBIDDEN in requireAuth('ADMIN')
     const res = await PATCH(makeRequest(), makeParams() as any);
     expect(res.status).toBe(403);
     const body = await res.json();
@@ -185,7 +186,8 @@ describe('PATCH /api/transactions/[id]/scan', () => {
   });
 
   test('10. Catch block generic 500', async () => {
-    mockGetServerSession.mockRejectedValue(new Error('DB_DOWN'));
+    mockAdminSession();
+    mockTxFindUnique.mockRejectedValue(new Error('DATABASE_CRASH'));
     const errSpy = jest.spyOn(console, 'error').mockImplementation();
     const res = await PATCH(makeRequest(), makeParams() as any);
     expect(res.status).toBe(500);
@@ -193,6 +195,40 @@ describe('PATCH /api/transactions/[id]/scan', () => {
     expect(body.error).toBe('Internal server error');
     expect(errSpy).toHaveBeenCalledWith('[SCAN_PATCH]', expect.any(Error));
     errSpy.mockRestore();
+  });
+
+  test('11. Fails when transaction ID is empty string -> 404', async () => {
+    mockAdminSession();
+    mockTxFindUnique.mockResolvedValue(null);
+    const res = await PATCH(makeRequest(), makeParams('') as any);
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe('Transaction not found');
+  });
+
+  test('12. Preserves documentType and returns proper transaction payload structure', async () => {
+    mockAdminSession();
+    mockTxFindUnique.mockResolvedValue({
+      status: 'AWAITING_SCAN',
+      mode: 'HYBRID',
+      adminId: 'admin-1',
+    });
+    mockTxUpdate.mockResolvedValue({
+      id: 'tx-custom-99',
+      documentType: 'Surat Keterangan Aktif',
+      status: 'VALIDATED',
+      scannedAt: new Date(),
+      completedAt: new Date(),
+      student: { name: 'Siti Aminah' },
+      admin: { destinationName: 'Tata Usaha FIP' },
+    });
+    mockStatusLogCreate.mockResolvedValue({});
+
+    const res = await PATCH(makeRequest(), makeParams('tx-custom-99') as any);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.transaction.documentType).toBe('Surat Keterangan Aktif');
+    expect(body.transaction.id).toBe('tx-custom-99');
   });
 });
 
